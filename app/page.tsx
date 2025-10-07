@@ -1,36 +1,43 @@
-"use client"
+"use client";
 
-import { useEffect, useState } from "react"
-import Link from "next/link"
-import { Button } from "@/components/ui/button"
-import { Card, CardContent } from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
-import Navbar from "@/components/navbar"
-import Footer from "@/components/footer"
-import ProductCard from "@/components/product-card"
-import type { Product } from "@/models/Product"
-import { ChevronRight, Shield, Truck, Award, Droplets, Wind } from "lucide-react"
+import { useEffect, useState } from "react";
+import Link from "next/link";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import Navbar from "@/components/navbar";
+import Footer from "@/components/footer";
+import ProductCard from "@/components/product-card";
+import type { Product } from "@/models/Product";
+import {
+  ChevronRight,
+  Shield,
+  Truck,
+  Award,
+  Droplets,
+  Wind,
+} from "lucide-react";
 
 export default function HomePage() {
-  const [featuredProducts, setFeaturedProducts] = useState<Product[]>([])
-  const [loading, setLoading] = useState(true)
+  const [featuredProducts, setFeaturedProducts] = useState<Product[]>([]);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const fetchFeaturedProducts = async () => {
       try {
-        const response = await fetch("/api/products")
-        const products = await response.json()
+        const response = await fetch("/api/products");
+        const products = await response.json();
         // Show first 4 products as featured
-        setFeaturedProducts(products.slice(0, 4))
+        setFeaturedProducts(products.slice(0, 4));
       } catch (error) {
-        console.error("Error fetching featured products:", error)
+        console.error("Error fetching featured products:", error);
       } finally {
-        setLoading(false)
+        setLoading(false);
       }
-    }
+    };
 
-    fetchFeaturedProducts()
-  }, [])
+    fetchFeaturedProducts();
+  }, []);
 
   return (
     <div className="min-h-screen bg-background">
@@ -45,8 +52,9 @@ export default function HomePage() {
               <span className="block text-accent">Healthier Living</span>
             </h1>
             <p className="text-xl text-muted-foreground mb-8 max-w-2xl mx-auto text-pretty">
-              Discover our premium collection of water and air purifiers designed to create a healthier environment for
-              you and your family.
+              Discover our premium collection of water and air purifiers
+              designed to create a healthier environment for you and your
+              family.
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
               <Link href="/products?category=water-purifier">
@@ -56,7 +64,11 @@ export default function HomePage() {
                 </Button>
               </Link>
               <Link href="/products?category=air-purifier">
-                <Button variant="outline" size="lg" className="w-full sm:w-auto bg-transparent">
+                <Button
+                  variant="outline"
+                  size="lg"
+                  className="w-full sm:w-auto bg-transparent"
+                >
                   Shop Air Purifiers
                   <ChevronRight className="ml-2 h-4 w-4" />
                 </Button>
@@ -73,7 +85,9 @@ export default function HomePage() {
             <Card className="text-center">
               <CardContent className="p-6">
                 <Shield className="h-12 w-12 text-accent mx-auto mb-4" />
-                <h3 className="font-semibold text-foreground mb-2">Quality Guaranteed</h3>
+                <h3 className="font-semibold text-foreground mb-2">
+                  Quality Guaranteed
+                </h3>
                 <p className="text-muted-foreground text-sm">
                   Premium filtration technology with certified quality standards
                 </p>
@@ -82,21 +96,31 @@ export default function HomePage() {
             <Card className="text-center">
               <CardContent className="p-6">
                 <Truck className="h-12 w-12 text-accent mx-auto mb-4" />
-                <h3 className="font-semibold text-foreground mb-2">Free Shipping</h3>
-                <p className="text-muted-foreground text-sm">Free delivery on all orders over $99 nationwide</p>
+                <h3 className="font-semibold text-foreground mb-2">
+                  Free Shipping
+                </h3>
+                <p className="text-muted-foreground text-sm">
+                  Free delivery on all orders over $99 nationwide
+                </p>
               </CardContent>
             </Card>
             <Card className="text-center">
               <CardContent className="p-6">
                 <Award className="h-12 w-12 text-accent mx-auto mb-4" />
-                <h3 className="font-semibold text-foreground mb-2">2 Year Warranty</h3>
-                <p className="text-muted-foreground text-sm">Comprehensive warranty coverage on all products</p>
+                <h3 className="font-semibold text-foreground mb-2">
+                  2 Year Warranty
+                </h3>
+                <p className="text-muted-foreground text-sm">
+                  Comprehensive warranty coverage on all products
+                </p>
               </CardContent>
             </Card>
             <Card className="text-center">
               <CardContent className="p-6">
                 <Droplets className="h-12 w-12 text-accent mx-auto mb-4" />
-                <h3 className="font-semibold text-foreground mb-2">Expert Support</h3>
+                <h3 className="font-semibold text-foreground mb-2">
+                  Expert Support
+                </h3>
                 <p className="text-muted-foreground text-sm">
                   24/7 customer support from water and air quality experts
                 </p>
@@ -110,9 +134,12 @@ export default function HomePage() {
       <section className="py-16 bg-muted/30">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-12">
-            <h2 className="text-3xl font-bold text-primary mb-4">Shop by Category</h2>
+            <h2 className="text-3xl font-bold text-primary mb-4">
+              Shop by Category
+            </h2>
             <p className="text-muted-foreground max-w-2xl mx-auto">
-              Choose from our specialized collection of water and air purification systems
+              Choose from our specialized collection of water and air
+              purification systems
             </p>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
@@ -120,7 +147,9 @@ export default function HomePage() {
               <Card className="group hover:shadow-lg transition-all duration-300 cursor-pointer">
                 <CardContent className="p-8 text-center">
                   <Droplets className="h-16 w-16 text-accent mx-auto mb-4 group-hover:scale-110 transition-transform" />
-                  <h3 className="text-2xl font-bold text-foreground mb-2">Water Purifiers</h3>
+                  <h3 className="text-2xl font-bold text-foreground mb-2">
+                    Water Purifiers
+                  </h3>
                   <p className="text-muted-foreground mb-4">
                     Advanced filtration systems for pure, clean drinking water
                   </p>
@@ -132,7 +161,9 @@ export default function HomePage() {
               <Card className="group hover:shadow-lg transition-all duration-300 cursor-pointer">
                 <CardContent className="p-8 text-center">
                   <Wind className="h-16 w-16 text-accent mx-auto mb-4 group-hover:scale-110 transition-transform" />
-                  <h3 className="text-2xl font-bold text-foreground mb-2">Air Purifiers</h3>
+                  <h3 className="text-2xl font-bold text-foreground mb-2">
+                    Air Purifiers
+                  </h3>
                   <p className="text-muted-foreground mb-4">
                     HEPA filtration technology for cleaner, fresher indoor air
                   </p>
@@ -148,7 +179,9 @@ export default function HomePage() {
       <section className="py-16">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-12">
-            <h2 className="text-3xl font-bold text-primary mb-4">Featured Products</h2>
+            <h2 className="text-3xl font-bold text-primary mb-4">
+              Featured Products
+            </h2>
             <p className="text-muted-foreground max-w-2xl mx-auto">
               Discover our most popular water and air purification systems
             </p>
@@ -189,5 +222,5 @@ export default function HomePage() {
 
       <Footer />
     </div>
-  )
+  );
 }
