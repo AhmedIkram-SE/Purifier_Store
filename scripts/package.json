@@ -1,0 +1,17 @@
+{
+  "name": "purelife-database-scripts",
+  "version": "1.0.0",
+  "type": "module",
+  "description": "Database initialization and seeding scripts for PureLife e-commerce",
+  "scripts": {
+    "init-db": "node init-database.js",
+    "seed-content": "node seed-content.js",
+    "create-admin": "node create-admin-user.js",
+    "update-schema": "node update-user-schema.js",
+    "setup-all": "npm run init-db && npm run seed-content && npm run create-admin && npm run update-schema"
+  },
+  "dependencies": {
+    "mongodb": "^6.0.0",
+    "bcryptjs": "^2.4.3"
+  }
+}

@@ -1,0 +1,77 @@
+"use client"
+
+import Image from "next/image"
+import Link from "next/link"
+import { Button } from "@/components/ui/button"
+import { Card, CardContent, CardFooter } from "@/components/ui/card"
+import { Badge } from "@/components/ui/badge"
+import type { Product } from "@/models/Product"
+import { useCart } from "@/contexts/cart-context"
+import { ShoppingCart } from "lucide-react"
+
+interface ProductCardProps {
+  product: Product
+}
+
+export default function ProductCard({ product }: ProductCardProps) {
+  const { addItem } = useCart()
+
+  const formatPrice = (price: number) => {
+    return new Intl.NumberFormat("en-US", {
+      style: "currency",
+      currency: "USD",
+    }).format(price)
+  }
+
+  const handleAddToCart = () => {
+    addItem({
+      productId: product._id!,
+      name: product.name,
+      price: product.price,
+      quantity: 1,
+      imageURL: product.imageURL,
+      stock: product.stock,
+    })
+  }
+
+  return (
+    <Card className="group hover:shadow-lg transition-shadow duration-300">
+      <CardContent className="p-0">
+        <div className="relative aspect-square overflow-hidden rounded-t-lg">
+          <Image
+            src={product.imageURL || "/placeholder.svg"}
+            alt={product.name}
+            fill
+            className="object-cover group-hover:scale-105 transition-transform duration-300"
+          />
+          {product.stock === 0 && (
+            <div className="absolute inset-0 bg-black/50 flex items-center justify-center">
+              <Badge variant="destructive">Out of Stock</Badge>
+            </div>
+          )}
+        </div>
+        <div className="p-4">
+          <div className="flex items-center justify-between mb-2">
+            <Badge variant="secondary" className="text-xs">
+              {product.category === "water-purifier" ? "Water Purifier" : "Air Purifier"}
+            </Badge>
+            <span className="text-lg font-bold text-primary">{formatPrice(product.price)}</span>
+          </div>
+          <h3 className="font-semibold text-foreground mb-2 line-clamp-2">{product.name}</h3>
+          <p className="text-muted-foreground text-sm line-clamp-2 mb-4">{product.description}</p>
+        </div>
+      </CardContent>
+      <CardFooter className="p-4 pt-0 flex gap-2">
+        <Link href={`/products/${product._id}`} className="flex-1">
+          <Button variant="outline" className="w-full bg-transparent">
+            View Details
+          </Button>
+        </Link>
+        <Button className="flex-1" disabled={product.stock === 0} onClick={handleAddToCart}>
+          <ShoppingCart className="h-4 w-4 mr-2" />
+          Add to Cart
+        </Button>
+      </CardFooter>
+    </Card>
+  )
+}
