@@ -1,28 +1,28 @@
-"use client"
+"use client";
 
-import type React from "react"
+import type React from "react";
 
-import { useState, useEffect } from "react"
-import { useRouter, useSearchParams } from "next/navigation"
-import Image from "next/image"
-import Navbar from "@/components/navbar"
-import Footer from "@/components/footer"
-import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { Separator } from "@/components/ui/separator"
-import { Checkbox } from "@/components/ui/checkbox"
-import { useCart } from "@/contexts/cart-context"
-import { useAuth } from "@/contexts/auth-context"
-import type { Order } from "@/models/Order"
+import { useState, useEffect } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
+import Image from "next/image";
+import Navbar from "@/components/navbar";
+import Footer from "@/components/footer";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Separator } from "@/components/ui/separator";
+import { Checkbox } from "@/components/ui/checkbox";
+import { useCart } from "@/contexts/cart-context";
+import { useAuth } from "@/contexts/auth-context";
+import type { Order } from "@/models/Order";
 
 export default function CheckoutPage() {
-  const { items, totalPrice, clearCart } = useCart()
-  const { user, isAuthenticated, loading: authLoading } = useAuth()
-  const router = useRouter()
-  const params = useSearchParams()
-  const [loading, setLoading] = useState(false)
+  const { items, totalPrice, clearCart } = useCart();
+  const { user, isAuthenticated, loading: authLoading } = useAuth();
+  const router = useRouter();
+  const params = useSearchParams();
+  const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState({
     name: "",
     email: "",
@@ -32,7 +32,7 @@ export default function CheckoutPage() {
     state: "",
     zipCode: "",
     country: "United States",
-  })
+  });
 
   const [billingData, setBillingData] = useState({
     cardNumber: "",
@@ -44,16 +44,16 @@ export default function CheckoutPage() {
     billingState: "",
     billingZipCode: "",
     billingCountry: "United States",
-  })
+  });
 
-  const [saveBillingInfo, setSaveBillingInfo] = useState(false)
+  const [saveBillingInfo, setSaveBillingInfo] = useState(false);
 
   useEffect(() => {
     if (!authLoading && !isAuthenticated) {
-      const next = "/checkout"
-      router.push(`/auth/login?next=${encodeURIComponent(next)}`)
+      const next = "/checkout";
+      router.push(`/auth/login?next=${encodeURIComponent(next)}`);
     }
-  }, [authLoading, isAuthenticated, router])
+  }, [authLoading, isAuthenticated, router]);
 
   useEffect(() => {
     if (isAuthenticated && user) {
@@ -61,14 +61,14 @@ export default function CheckoutPage() {
         ...prev,
         name: user.name,
         email: user.email,
-      }))
+      }));
 
       // Load saved billing info if available
       const loadBillingInfo = async () => {
         try {
-          const response = await fetch("/api/profile/billing")
+          const response = await fetch("/api/profile/billing");
           if (response.ok) {
-            const data = await response.json()
+            const data = await response.json();
             if (data.billingInfo) {
               setBillingData((prev) => ({
                 ...prev,
@@ -77,47 +77,50 @@ export default function CheckoutPage() {
                 billingCity: data.billingInfo.billingAddress?.city || "",
                 billingState: data.billingInfo.billingAddress?.state || "",
                 billingZipCode: data.billingInfo.billingAddress?.zipCode || "",
-                billingCountry: data.billingInfo.billingAddress?.country || "United States",
-              }))
+                billingCountry:
+                  data.billingInfo.billingAddress?.country || "United States",
+              }));
             }
           }
         } catch (error) {
-          console.error("Error loading billing info:", error)
+          console.error("Error loading billing info:", error);
         }
-      }
+      };
 
-      loadBillingInfo()
+      loadBillingInfo();
     }
-  }, [isAuthenticated, user])
+  }, [isAuthenticated, user]);
 
   const formatPrice = (price: number) => {
     return new Intl.NumberFormat("en-US", {
       style: "currency",
       currency: "USD",
-    }).format(price)
-  }
+    }).format(price);
+  };
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+  const handleInputChange = (
+    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
+  ) => {
     setFormData({
       ...formData,
       [e.target.name]: e.target.value,
-    })
-  }
+    });
+  };
 
   const handleBillingChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setBillingData({
       ...billingData,
       [e.target.name]: e.target.value,
-    })
-  }
+    });
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
+    e.preventDefault();
     if (!isAuthenticated) {
-      router.push(`/auth/login?next=${encodeURIComponent("/checkout")}`)
-      return
+      router.push(`/auth/login?next=${encodeURIComponent("/checkout")}`);
+      return;
     }
-    setLoading(true)
+    setLoading(true);
 
     try {
       if (saveBillingInfo && isAuthenticated) {
@@ -130,7 +133,7 @@ export default function CheckoutPage() {
             zipCode: billingData.billingZipCode,
             country: billingData.billingCountry,
           },
-        }
+        };
 
         await fetch("/api/profile/billing", {
           method: "POST",
@@ -138,7 +141,7 @@ export default function CheckoutPage() {
             "Content-Type": "application/json",
           },
           body: JSON.stringify({ billingInfo: billingInfoToSave }),
-        })
+        });
       }
 
       const orderData: Omit<Order, "_id" | "createdAt" | "updatedAt"> = {
@@ -163,7 +166,7 @@ export default function CheckoutPage() {
         })),
         totalPrice: totalPrice * 1.08, // Including tax
         status: "pending",
-      }
+      };
 
       const response = await fetch("/api/orders", {
         method: "POST",
@@ -171,25 +174,25 @@ export default function CheckoutPage() {
           "Content-Type": "application/json",
         },
         body: JSON.stringify(orderData),
-      })
+      });
 
       if (response.ok) {
-        const order = await response.json()
-        clearCart()
-        router.push(`/order-confirmation/${order._id}`)
+        const order = await response.json();
+        clearCart();
+        router.push(`/order-confirmation/${order._id}`);
       } else {
-        throw new Error("Failed to place order")
+        throw new Error("Failed to place order");
       }
     } catch (error) {
-      console.error("Error placing order:", error)
-      alert("Failed to place order. Please try again.")
+      console.error("Error placing order:", error);
+      alert("Failed to place order. Please try again.");
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
-  }
+  };
 
   if (!isAuthenticated || authLoading) {
-    return null
+    return null;
   }
 
   if (items.length === 0) {
@@ -198,14 +201,20 @@ export default function CheckoutPage() {
         <Navbar />
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
           <div className="text-center">
-            <h1 className="text-3xl font-bold text-primary mb-4">Your Cart is Empty</h1>
-            <p className="text-muted-foreground mb-8">Add some items to your cart before proceeding to checkout.</p>
-            <Button onClick={() => router.push("/products")}>Continue Shopping</Button>
+            <h1 className="text-3xl font-bold text-primary mb-4">
+              Your Cart is Empty
+            </h1>
+            <p className="text-muted-foreground mb-8">
+              Add some items to your cart before proceeding to checkout.
+            </p>
+            <Button onClick={() => router.push("/products")}>
+              Continue Shopping
+            </Button>
           </div>
         </div>
         <Footer />
       </div>
-    )
+    );
   }
 
   return (
@@ -228,7 +237,13 @@ export default function CheckoutPage() {
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
                       <Label htmlFor="name">Full Name *</Label>
-                      <Input id="name" name="name" value={formData.name} onChange={handleInputChange} required />
+                      <Input
+                        id="name"
+                        name="name"
+                        value={formData.name}
+                        onChange={handleInputChange}
+                        required
+                      />
                     </div>
                     <div>
                       <Label htmlFor="email">Email *</Label>
@@ -257,17 +272,35 @@ export default function CheckoutPage() {
 
                   <div>
                     <Label htmlFor="street">Street Address *</Label>
-                    <Input id="street" name="street" value={formData.street} onChange={handleInputChange} required />
+                    <Input
+                      id="street"
+                      name="street"
+                      value={formData.street}
+                      onChange={handleInputChange}
+                      required
+                    />
                   </div>
 
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                     <div>
                       <Label htmlFor="city">City *</Label>
-                      <Input id="city" name="city" value={formData.city} onChange={handleInputChange} required />
+                      <Input
+                        id="city"
+                        name="city"
+                        value={formData.city}
+                        onChange={handleInputChange}
+                        required
+                      />
                     </div>
                     <div>
                       <Label htmlFor="state">State *</Label>
-                      <Input id="state" name="state" value={formData.state} onChange={handleInputChange} required />
+                      <Input
+                        id="state"
+                        name="state"
+                        value={formData.state}
+                        onChange={handleInputChange}
+                        required
+                      />
                     </div>
                     <div>
                       <Label htmlFor="zipCode">ZIP Code *</Label>
@@ -296,7 +329,14 @@ export default function CheckoutPage() {
                         name="cardNumber"
                         placeholder="1234 5678 9012 3456"
                         value={billingData.cardNumber}
-                        onChange={handleBillingChange}
+                        onChange={(e) => {
+                          let value = e.target.value.replace(/\D/g, "");
+                          value = value.replace(/(.{4})/g, "$1 ").trim();
+                          handleBillingChange({
+                            target: { name: "cardNumber", value },
+                          } as React.ChangeEvent<HTMLInputElement>);
+                        }}
+                        maxLength={19}
                         required
                       />
                     </div>
@@ -320,7 +360,16 @@ export default function CheckoutPage() {
                         name="expiryDate"
                         placeholder="MM/YY"
                         value={billingData.expiryDate}
-                        onChange={handleBillingChange}
+                        onChange={(e) => {
+                          let value = e.target.value.replace(/\D/g, "");
+                          if (value.length > 2) {
+                            value = value.slice(0, 2) + "/" + value.slice(2);
+                          }
+                          handleBillingChange({
+                            target: { name: "expiryDate", value },
+                          } as React.ChangeEvent<HTMLInputElement>);
+                        }}
+                        maxLength={5}
                         required
                       />
                     </div>
@@ -331,7 +380,16 @@ export default function CheckoutPage() {
                         name="cvv"
                         placeholder="123"
                         value={billingData.cvv}
-                        onChange={handleBillingChange}
+                        onChange={(e) => {
+                          let value = e.target.value.replace(/\D/g, "");
+                          if (value.length > 3) {
+                            value = value.slice(0, 3);
+                          }
+                          handleBillingChange({
+                            target: { name: "cvv", value },
+                          } as React.ChangeEvent<HTMLInputElement>);
+                        }}
+                        maxLength={3}
                         required
                       />
                     </div>
@@ -340,7 +398,9 @@ export default function CheckoutPage() {
                   <Separator />
 
                   <div>
-                    <Label className="text-base font-medium">Billing Address</Label>
+                    <Label className="text-base font-medium">
+                      Billing Address
+                    </Label>
                   </div>
 
                   <div>
@@ -392,7 +452,9 @@ export default function CheckoutPage() {
                       <Checkbox
                         id="saveBillingInfo"
                         checked={saveBillingInfo}
-                        onCheckedChange={(checked) => setSaveBillingInfo(checked as boolean)}
+                        onCheckedChange={(checked) =>
+                          setSaveBillingInfo(checked as boolean)
+                        }
                       />
                       <Label htmlFor="saveBillingInfo" className="text-sm">
                         Save this info for later purchases
@@ -423,13 +485,17 @@ export default function CheckoutPage() {
                           />
                         </div>
                         <div className="flex-1 min-w-0">
-                          <h4 className="font-medium text-sm line-clamp-2">{item.name}</h4>
+                          <h4 className="font-medium text-sm line-clamp-2">
+                            {item.name}
+                          </h4>
                           <p className="text-muted-foreground text-sm">
                             Qty: {item.quantity} × {formatPrice(item.price)}
                           </p>
                         </div>
                         <div className="text-right">
-                          <p className="font-medium">{formatPrice(item.price * item.quantity)}</p>
+                          <p className="font-medium">
+                            {formatPrice(item.price * item.quantity)}
+                          </p>
                         </div>
                       </div>
                     ))}
@@ -453,16 +519,24 @@ export default function CheckoutPage() {
                     <Separator />
                     <div className="flex justify-between text-lg font-bold">
                       <span>Total</span>
-                      <span className="text-primary">{formatPrice(totalPrice * 1.08)}</span>
+                      <span className="text-primary">
+                        {formatPrice(totalPrice * 1.08)}
+                      </span>
                     </div>
                   </div>
 
-                  <Button type="submit" size="lg" className="w-full" disabled={loading}>
+                  <Button
+                    type="submit"
+                    size="lg"
+                    className="w-full"
+                    disabled={loading}
+                  >
                     {loading ? "Placing Order..." : "Place Order"}
                   </Button>
 
                   <p className="text-xs text-muted-foreground text-center">
-                    By placing your order, you agree to our terms and conditions.
+                    By placing your order, you agree to our terms and
+                    conditions.
                   </p>
                 </CardContent>
               </Card>
@@ -473,5 +547,5 @@ export default function CheckoutPage() {
 
       <Footer />
     </div>
-  )
+  );
 }
