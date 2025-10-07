@@ -34,7 +34,7 @@ export default function Navbar() {
               <span className="text-primary-foreground font-bold text-lg">P</span>
             </div> */}
             <Image
-              src="favicon.ico"
+              src="/favicon.ico"
               alt="Purelife logo"
               height={35}
               width={35}
