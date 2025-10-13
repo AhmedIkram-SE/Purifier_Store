@@ -1,7 +1,16 @@
 "use client";
 
 import Link from "next/link";
-import { ShoppingCart, Search, Menu, X, User, LogOut } from "lucide-react";
+import {
+  ShoppingCart,
+  Search,
+  Menu,
+  X,
+  User,
+  LogOut,
+  LogIn,
+  UserPlus,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -126,16 +135,34 @@ export default function Navbar() {
               </DropdownMenu>
             ) : (
               <div className="flex items-center gap-2">
-                <Link href="/auth/login">
-                  <Button variant="ghost" size="sm">
-                    Login
-                  </Button>
-                </Link>
-                <Link href="/auth/register">
-                  <Button variant="outline" size="sm">
-                    Sign Up
-                  </Button>
-                </Link>
+                {/* Desktop version */}
+                <div className="hidden lg:flex items-center gap-2">
+                  <Link href="/auth/login">
+                    <Button variant="ghost" size="sm">
+                      Login
+                    </Button>
+                  </Link>
+                  <Link href="/auth/register">
+                    <Button variant="outline" size="sm">
+                      Sign Up
+                    </Button>
+                  </Link>
+                </div>
+
+                {/* Mobile version (icon buttons) */}
+                <div className="flex lg:hidden items-center gap-2">
+                  <Link href="/auth/login">
+                    <Button variant="ghost" size="icon" aria-label="Login">
+                      <LogIn className="h-5 w-5" />
+                    </Button>
+                  </Link>
+                  <Link href="/auth/register">
+                    <Button variant="outline" size="icon" aria-label="Sign Up">
+                      <UserPlus className="h-5 w-5" />{" "}
+                      {/* or use another icon like <LogIn /> or <UserPlus /> */}
+                    </Button>
+                  </Link>
+                </div>
               </div>
             )}
 

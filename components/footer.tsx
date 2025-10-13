@@ -1,5 +1,6 @@
-import Link from "next/link"
-import { Mail, Phone, MapPin } from "lucide-react"
+import Link from "next/link";
+import { Mail, Phone, MapPin } from "lucide-react";
+import Image from "next/image";
 
 export default function Footer() {
   return (
@@ -9,13 +10,21 @@ export default function Footer() {
           {/* Company Info */}
           <div className="space-y-4">
             <div className="flex items-center space-x-2">
-              <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center">
-                <span className="text-primary-foreground font-bold text-lg">P</span>
+              <div className="w-8 h-8 flex items-center justify-center">
+                {/* <span className="text-primary-foreground font-bold text-lg">P</span> */}
+                <Image
+                  src="/favicon.ico"
+                  alt="Purelife logo"
+                  height={35}
+                  width={35}
+                  className="object-contian"
+                />
               </div>
               <span className="text-xl font-bold text-primary">PureLife</span>
             </div>
             <p className="text-muted-foreground text-sm">
-              Premium water and air purifiers for a healthier home. Clean air and pure water for your family.
+              Premium water and air purifiers for a healthier home. Clean air
+              and pure water for your family.
             </p>
           </div>
 
@@ -41,7 +50,10 @@ export default function Footer() {
               >
                 Air Purifiers
               </Link>
-              <Link href="/about" className="block text-muted-foreground hover:text-primary transition-colors text-sm">
+              <Link
+                href="/about"
+                className="block text-muted-foreground hover:text-primary transition-colors text-sm"
+              >
                 About Us
               </Link>
             </div>
@@ -84,24 +96,32 @@ export default function Footer() {
             <div className="space-y-3">
               <div className="flex items-center space-x-2">
                 <Phone className="h-4 w-4 text-muted-foreground" />
-                <span className="text-muted-foreground text-sm">+1 (555) 123-4567</span>
+                <span className="text-muted-foreground text-sm">
+                  +1 (555) 123-4567
+                </span>
               </div>
               <div className="flex items-center space-x-2">
                 <Mail className="h-4 w-4 text-muted-foreground" />
-                <span className="text-muted-foreground text-sm">info@purelife.com</span>
+                <span className="text-muted-foreground text-sm">
+                  info@purelife.com
+                </span>
               </div>
               <div className="flex items-center space-x-2">
                 <MapPin className="h-4 w-4 text-muted-foreground" />
-                <span className="text-muted-foreground text-sm">123 Clean St, Pure City, PC 12345</span>
+                <span className="text-muted-foreground text-sm">
+                  123 Clean St, Pure City, PC 12345
+                </span>
               </div>
             </div>
           </div>
         </div>
 
         <div className="border-t border-border mt-8 pt-8 text-center">
-          <p className="text-muted-foreground text-sm">© 2024 PureLife. All rights reserved.</p>
+          <p className="text-muted-foreground text-sm">
+            © 2025 PureLife. All rights reserved.
+          </p>
         </div>
       </div>
     </footer>
-  )
+  );
 }

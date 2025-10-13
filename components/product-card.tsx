@@ -1,27 +1,27 @@
-"use client"
+"use client";
 
-import Image from "next/image"
-import Link from "next/link"
-import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardFooter } from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
-import type { Product } from "@/models/Product"
-import { useCart } from "@/contexts/cart-context"
-import { ShoppingCart } from "lucide-react"
+import Image from "next/image";
+import Link from "next/link";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardFooter } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import type { Product } from "@/models/Product";
+import { useCart } from "@/contexts/cart-context";
+import { ShoppingCart } from "lucide-react";
 
 interface ProductCardProps {
-  product: Product
+  product: Product;
 }
 
 export default function ProductCard({ product }: ProductCardProps) {
-  const { addItem } = useCart()
+  const { addItem } = useCart();
 
   const formatPrice = (price: number) => {
     return new Intl.NumberFormat("en-US", {
       style: "currency",
       currency: "USD",
-    }).format(price)
-  }
+    }).format(price);
+  };
 
   const handleAddToCart = () => {
     addItem({
@@ -31,8 +31,8 @@ export default function ProductCard({ product }: ProductCardProps) {
       quantity: 1,
       imageURL: product.imageURL,
       stock: product.stock,
-    })
-  }
+    });
+  };
 
   return (
     <Card className="group hover:shadow-lg transition-shadow duration-300">
@@ -53,25 +53,40 @@ export default function ProductCard({ product }: ProductCardProps) {
         <div className="p-4">
           <div className="flex items-center justify-between mb-2">
             <Badge variant="secondary" className="text-xs">
-              {product.category === "water-purifier" ? "Water Purifier" : "Air Purifier"}
+              {product.category === "water-purifier"
+                ? "Water Purifier"
+                : "Air Purifier"}
             </Badge>
-            <span className="text-lg font-bold text-primary">{formatPrice(product.price)}</span>
+            <span className="text-lg font-bold text-primary">
+              {formatPrice(product.price)}
+            </span>
           </div>
-          <h3 className="font-semibold text-foreground mb-2 line-clamp-2">{product.name}</h3>
-          <p className="text-muted-foreground text-sm line-clamp-2 mb-4">{product.description}</p>
+          <h3 className="font-semibold text-foreground mb-2 line-clamp-2">
+            {product.name}
+          </h3>
+          <p className="text-muted-foreground text-sm line-clamp-2 mb-4">
+            {product.description}
+          </p>
         </div>
       </CardContent>
-      <CardFooter className="p-4 pt-0 flex gap-2">
-        <Link href={`/products/${product._id}`} className="flex-1">
-          <Button variant="outline" className="w-full bg-transparent">
+      <CardFooter className="p-4 pt-0 flex gap-2 w-full box-border">
+        <Link href={`/products/${product._id}`} className="flex-1 min-w-0">
+          <Button
+            variant="outline"
+            className="w-full bg-transparent text-xs sm:text-sm md:text-sm flex items-center justify-center whitespace-normal break-words leading-tight text-center px-2 py-2"
+          >
             View Details
           </Button>
         </Link>
-        <Button className="flex-1" disabled={product.stock === 0} onClick={handleAddToCart}>
-          <ShoppingCart className="h-4 w-4 mr-2" />
+        <Button
+          className="flex-1 min-w-0 text-xs sm:text-sm md:text-sm flex items-center justify-center break-words leading-tight text-center "
+          disabled={product.stock === 0}
+          onClick={handleAddToCart}
+        >
+          <ShoppingCart className="h-4 w-4 mr-1 sm:mr2 shrink-0" />
           Add to Cart
         </Button>
       </CardFooter>
     </Card>
-  )
+  );
 }
