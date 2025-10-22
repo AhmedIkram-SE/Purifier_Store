@@ -1,23 +1,30 @@
-"use client"
-import Image from "next/image"
-import Link from "next/link"
-import Navbar from "@/components/navbar"
-import Footer from "@/components/footer"
-import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Separator } from "@/components/ui/separator"
-import { useCart } from "@/contexts/cart-context"
-import { Minus, Plus, Trash2, ShoppingBag } from "lucide-react"
+"use client";
+import Image from "next/image";
+import Link from "next/link";
+import Navbar from "@/components/navbar";
+import Footer from "@/components/footer";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Separator } from "@/components/ui/separator";
+import { useCart } from "@/contexts/cart-context";
+import { Minus, Plus, Trash2, ShoppingBag } from "lucide-react";
 
 export default function CartPage() {
-  const { items, totalItems, totalPrice, updateQuantity, removeItem, clearCart } = useCart()
+  const {
+    items,
+    totalItems,
+    totalPrice,
+    updateQuantity,
+    removeItem,
+    clearCart,
+  } = useCart();
 
   const formatPrice = (price: number) => {
     return new Intl.NumberFormat("en-US", {
       style: "currency",
       currency: "USD",
-    }).format(price)
-  }
+    }).format(price);
+  };
 
   if (items.length === 0) {
     return (
@@ -26,9 +33,12 @@ export default function CartPage() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
           <div className="text-center">
             <ShoppingBag className="h-24 w-24 text-muted-foreground mx-auto mb-6" />
-            <h1 className="text-3xl font-bold text-primary mb-4">Your Cart is Empty</h1>
+            <h1 className="text-3xl font-bold text-primary mb-4">
+              Your Cart is Empty
+            </h1>
             <p className="text-muted-foreground mb-8 max-w-md mx-auto">
-              Looks like you haven't added any items to your cart yet. Start shopping to find amazing products!
+              Looks like you haven't added any items to your cart yet. Start
+              shopping to find amazing products!
             </p>
             <Link href="/products">
               <Button size="lg">Continue Shopping</Button>
@@ -37,7 +47,7 @@ export default function CartPage() {
         </div>
         <Footer />
       </div>
-    )
+    );
   }
 
   return (
@@ -46,7 +56,9 @@ export default function CartPage() {
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="mb-8">
-          <h1 className="text-3xl font-bold text-primary mb-2">Shopping Cart</h1>
+          <h1 className="text-3xl font-bold text-primary mb-2">
+            Shopping Cart
+          </h1>
           <p className="text-muted-foreground">
             {totalItems} {totalItems === 1 ? "item" : "items"} in your cart
           </p>
@@ -69,31 +81,41 @@ export default function CartPage() {
                     </div>
 
                     <div className="flex-1 min-w-0">
-                      <h3 className="font-semibold text-foreground mb-1 line-clamp-2">{item.name}</h3>
-                      <p className="text-lg font-bold text-primary mb-2">{formatPrice(item.price)}</p>
+                      <h3 className="font-semibold text-foreground mb-1 line-clamp-2">
+                        {item.name}
+                      </h3>
+                      <p className="text-lg font-bold text-primary mb-2">
+                        {formatPrice(item.price)}
+                      </p>
 
                       <div className="flex items-center justify-between">
                         <div className="flex items-center gap-2">
                           <Button
                             variant="outline"
                             size="sm"
-                            onClick={() => updateQuantity(item.productId, item.quantity - 1)}
+                            onClick={() =>
+                              updateQuantity(item.productId, item.quantity - 1)
+                            }
                             disabled={item.quantity <= 1}
                           >
                             <Minus className="h-3 w-3" />
                           </Button>
-                          <span className="w-12 text-center font-medium">{item.quantity}</span>
+                          <span className="w-5 sm:w-12 text-center font-medium">
+                            {item.quantity}
+                          </span>
                           <Button
                             variant="outline"
                             size="sm"
-                            onClick={() => updateQuantity(item.productId, item.quantity + 1)}
+                            onClick={() =>
+                              updateQuantity(item.productId, item.quantity + 1)
+                            }
                             disabled={item.quantity >= item.stock}
                           >
                             <Plus className="h-3 w-3" />
                           </Button>
                         </div>
 
-                        <div className="flex items-center gap-4">
+                        <div className="flex items-center gap-2 sm:gap-4">
                           <span className="font-semibold text-foreground">
                             {formatPrice(item.price * item.quantity)}
                           </span>
@@ -117,7 +139,11 @@ export default function CartPage() {
               <Link href="/products">
                 <Button variant="outline">Continue Shopping</Button>
               </Link>
-              <Button variant="ghost" onClick={clearCart} className="text-destructive hover:text-destructive">
+              <Button
+                variant="ghost"
+                onClick={clearCart}
+                className="text-destructive hover:text-destructive"
+              >
                 Clear Cart
               </Button>
             </div>
@@ -131,7 +157,9 @@ export default function CartPage() {
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="flex justify-between">
-                  <span className="text-muted-foreground">Subtotal ({totalItems} items)</span>
+                  <span className="text-muted-foreground">
+                    Subtotal ({totalItems} items)
+                  </span>
                   <span className="font-medium">{formatPrice(totalPrice)}</span>
                 </div>
 
@@ -142,14 +170,18 @@ export default function CartPage() {
 
                 <div className="flex justify-between">
                   <span className="text-muted-foreground">Tax</span>
-                  <span className="font-medium">{formatPrice(totalPrice * 0.08)}</span>
+                  <span className="font-medium">
+                    {formatPrice(totalPrice * 0.08)}
+                  </span>
                 </div>
 
                 <Separator />
 
                 <div className="flex justify-between text-lg font-bold">
                   <span>Total</span>
-                  <span className="text-primary">{formatPrice(totalPrice * 1.08)}</span>
+                  <span className="text-primary">
+                    {formatPrice(totalPrice * 1.08)}
+                  </span>
                 </div>
 
                 <Link href="/checkout" className="block">
@@ -158,7 +190,9 @@ export default function CartPage() {
                   </Button>
                 </Link>
 
-                <p className="text-xs text-muted-foreground text-center">Free shipping on all orders over $99</p>
+                <p className="text-xs text-muted-foreground text-center">
+                  Free shipping on all orders over $99
+                </p>
               </CardContent>
             </Card>
           </div>
@@ -167,5 +201,5 @@ export default function CartPage() {
 
       <Footer />
     </div>
-  )
+  );
 }
