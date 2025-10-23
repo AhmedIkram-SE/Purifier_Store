@@ -1,51 +1,51 @@
-"use client"
+"use client";
 
-import { useEffect, useState } from "react"
-import { useParams } from "next/navigation"
-import Image from "next/image"
-import Navbar from "@/components/navbar"
-import Footer from "@/components/footer"
-import { Button } from "@/components/ui/button"
-import { Card, CardContent } from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
-import { Separator } from "@/components/ui/separator"
-import type { Product } from "@/models/Product"
-import { useCart } from "@/contexts/cart-context"
-import { ShoppingCart, Heart, Share2, Check, Star } from "lucide-react"
+import { useEffect, useState } from "react";
+import { useParams } from "next/navigation";
+import Image from "next/image";
+import Navbar from "@/components/navbar";
+import Footer from "@/components/footer";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Separator } from "@/components/ui/separator";
+import type { Product } from "@/models/Product";
+import { useCart } from "@/contexts/cart-context";
+import { ShoppingCart, Heart, Share2, Check, Star } from "lucide-react";
 
 export default function ProductDetailPage() {
-  const [product, setProduct] = useState<Product | null>(null)
-  const [loading, setLoading] = useState(true)
-  const [quantity, setQuantity] = useState(1)
-  const params = useParams()
-  const { addItem } = useCart() // Added cart functionality
+  const [product, setProduct] = useState<Product | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [quantity, setQuantity] = useState(1);
+  const params = useParams();
+  const { addItem } = useCart(); // Added cart functionality
 
   useEffect(() => {
     const fetchProduct = async () => {
       try {
-        const response = await fetch(`/api/products/${params.id}`)
+        const response = await fetch(`/api/products/${params.slug}`);
         if (response.ok) {
-          const data = await response.json()
-          setProduct(data)
+          const data = await response.json();
+          setProduct(data);
         }
       } catch (error) {
-        console.error("Error fetching product:", error)
+        console.error("Error fetching product:", error);
       } finally {
-        setLoading(false)
+        setLoading(false);
       }
-    }
+    };
 
-    if (params.id) {
-      fetchProduct()
+    if (params.slug) {
+      fetchProduct();
     }
-  }, [params.id])
+  }, [params.slug]);
 
   const formatPrice = (price: number) => {
     return new Intl.NumberFormat("en-US", {
       style: "currency",
       currency: "USD",
-    }).format(price)
-  }
+    }).format(price);
+  };
 
   const handleAddToCart = () => {
     // Added handleAddToCart function
@@ -57,9 +57,9 @@ export default function ProductDetailPage() {
         quantity: quantity,
         imageURL: product.imageURL,
         stock: product.stock,
-      })
+      });
     }
-  }
+  };
 
   if (loading) {
     return (
@@ -78,7 +78,7 @@ export default function ProductDetailPage() {
           </div>
         </div>
       </div>
-    )
+    );
   }
 
   if (!product) {
@@ -87,13 +87,19 @@ export default function ProductDetailPage() {
         <Navbar />
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
           <div className="text-center py-12">
-            <h1 className="text-2xl font-bold text-foreground mb-4">Product Not Found</h1>
-            <p className="text-muted-foreground mb-4">The product you're looking for doesn't exist.</p>
-            <Button onClick={() => (window.location.href = "/products")}>Back to Products</Button>
+            <h1 className="text-2xl font-bold text-foreground mb-4">
+              Product Not Found
+            </h1>
+            <p className="text-muted-foreground mb-4">
+              The product you're looking for doesn't exist.
+            </p>
+            <Button onClick={() => (window.location.href = "/products")}>
+              Back to Products
+            </Button>
           </div>
         </div>
       </div>
-    )
+    );
   }
 
   return (
@@ -105,7 +111,12 @@ export default function ProductDetailPage() {
           {/* Product Image */}
           <div className="space-y-4">
             <div className="relative aspect-square overflow-hidden rounded-lg bg-muted">
-              <Image src={product.imageURL || "/placeholder.svg"} alt={product.name} fill className="object-cover" />
+              <Image
+                src={product.imageURL || "/placeholder.svg"}
+                alt={product.name}
+                fill
+                className="object-cover"
+              />
             </div>
           </div>
 
@@ -113,19 +124,32 @@ export default function ProductDetailPage() {
           <div className="space-y-6">
             <div>
               <Badge variant="secondary" className="mb-2">
-                {product.category === "water-purifier" ? "Water Purifier" : "Air Purifier"}
+                {product.category === "water-purifier"
+                  ? "Water Purifier"
+                  : "Air Purifier"}
               </Badge>
-              <h1 className="text-3xl font-bold text-primary mb-2">{product.name}</h1>
+              <h1 className="text-3xl font-bold text-primary mb-2">
+                {product.name}
+              </h1>
               <div className="flex items-center gap-2 mb-4">
                 <div className="flex items-center">
                   {[...Array(5)].map((_, i) => (
-                    <Star key={i} className="h-4 w-4 fill-yellow-400 text-yellow-400" />
+                    <Star
+                      key={i}
+                      className="h-4 w-4 fill-yellow-400 text-yellow-400"
+                    />
                   ))}
                 </div>
-                <span className="text-muted-foreground text-sm">(4.8) • 124 reviews</span>
+                <span className="text-muted-foreground text-sm">
+                  (4.8) • 124 reviews
+                </span>
               </div>
-              <p className="text-4xl font-bold text-primary mb-4">{formatPrice(product.price)}</p>
-              <p className="text-muted-foreground leading-relaxed">{product.description}</p>
+              <p className="text-4xl font-bold text-primary mb-4">
+                {formatPrice(product.price)}
+              </p>
+              <p className="text-muted-foreground leading-relaxed">
+                {product.description}
+              </p>
             </div>
 
             <Separator />
@@ -135,10 +159,14 @@ export default function ProductDetailPage() {
               {product.stock > 0 ? (
                 <>
                   <Check className="h-4 w-4 text-green-600" />
-                  <span className="text-green-600 font-medium">In Stock ({product.stock} available)</span>
+                  <span className="text-green-600 font-medium">
+                    In Stock ({product.stock} available)
+                  </span>
                 </>
               ) : (
-                <span className="text-destructive font-medium">Out of Stock</span>
+                <span className="text-destructive font-medium">
+                  Out of Stock
+                </span>
               )}
             </div>
 
@@ -155,11 +183,15 @@ export default function ProductDetailPage() {
                   >
                     -
                   </Button>
-                  <span className="px-4 py-2 min-w-[3rem] text-center">{quantity}</span>
+                  <span className="px-4 py-2 min-w-[3rem] text-center">
+                    {quantity}
+                  </span>
                   <Button
                     variant="ghost"
                     size="sm"
-                    onClick={() => setQuantity(Math.min(product.stock, quantity + 1))}
+                    onClick={() =>
+                      setQuantity(Math.min(product.stock, quantity + 1))
+                    }
                     disabled={quantity >= product.stock}
                   >
                     +
@@ -191,7 +223,9 @@ export default function ProductDetailPage() {
             {/* Features */}
             {product.features && product.features.length > 0 && (
               <div>
-                <h3 className="font-semibold text-foreground mb-3">Key Features</h3>
+                <h3 className="font-semibold text-foreground mb-3">
+                  Key Features
+                </h3>
                 <ul className="space-y-2">
                   {product.features.map((feature, index) => (
                     <li key={index} className="flex items-start gap-2">
@@ -206,26 +240,36 @@ export default function ProductDetailPage() {
         </div>
 
         {/* Specifications */}
-        {product.specifications && Object.keys(product.specifications).length > 0 && (
-          <div className="mt-16">
-            <h2 className="text-2xl font-bold text-primary mb-6">Specifications</h2>
-            <Card>
-              <CardContent className="p-6">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {Object.entries(product.specifications).map(([key, value]) => (
-                    <div key={key} className="flex justify-between py-2 border-b border-border last:border-b-0">
-                      <span className="font-medium text-foreground">{key}</span>
-                      <span className="text-muted-foreground">{value}</span>
-                    </div>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-        )}
+        {product.specifications &&
+          Object.keys(product.specifications).length > 0 && (
+            <div className="mt-16">
+              <h2 className="text-2xl font-bold text-primary mb-6">
+                Specifications
+              </h2>
+              <Card>
+                <CardContent className="p-6">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {Object.entries(product.specifications).map(
+                      ([key, value]) => (
+                        <div
+                          key={key}
+                          className="flex justify-between py-2 border-b border-border last:border-b-0"
+                        >
+                          <span className="font-medium text-foreground">
+                            {key}
+                          </span>
+                          <span className="text-muted-foreground">{value}</span>
+                        </div>
+                      )
+                    )}
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+          )}
       </div>
 
       <Footer />
     </div>
-  )
+  );
 }

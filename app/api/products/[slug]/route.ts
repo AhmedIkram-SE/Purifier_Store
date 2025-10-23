@@ -4,15 +4,15 @@ import { ObjectId } from "mongodb";
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: { slug: string } }
 ) {
   try {
-    const { id } = await params;
+    const { slug } = await params;
     const client = await getClientPromise();
     const db = client.db("purifier_store");
 
     const product = await db.collection("products").findOne({
-      _id: new ObjectId(id),
+      slug: slug,
     });
 
     if (!product) {

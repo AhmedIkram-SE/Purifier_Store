@@ -1,61 +1,84 @@
-"use client"
+"use client";
 
-import type React from "react"
+import type React from "react";
 
-import { useState } from "react"
-import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { Textarea } from "@/components/ui/textarea"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Alert, AlertDescription } from "@/components/ui/alert"
-import type { Product } from "@/models/Product"
-import { X, Plus } from "lucide-react"
+import { useState } from "react";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import type { Product } from "@/models/Product";
+import { X, Plus } from "lucide-react";
 
-interface ProductFormProps {
-  product?: Product
-  onSubmit: (productData: Omit<Product, "_id" | "createdAt" | "updatedAt">) => Promise<void>
-  onCancel: () => void
-  loading?: boolean
+function generateSlug(name: string) {
+  return name
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/(^-|-$)+/g, "");
 }
 
-export default function ProductForm({ product, onSubmit, onCancel, loading }: ProductFormProps) {
+interface ProductFormProps {
+  product?: Product;
+  onSubmit: (
+    productData: Omit<Product, "_id" | "createdAt" | "updatedAt">
+  ) => Promise<void>;
+  onCancel: () => void;
+  loading?: boolean;
+}
+
+export default function ProductForm({
+  product,
+  onSubmit,
+  onCancel,
+  loading,
+}: ProductFormProps) {
   const [formData, setFormData] = useState({
     name: product?.name || "",
-    category: product?.category || ("water-purifier" as "water-purifier" | "air-purifier"),
+    category:
+      product?.category ||
+      ("water-purifier" as "water-purifier" | "air-purifier"),
     description: product?.description || "",
     price: product?.price || 0,
     stock: product?.stock || 0,
+    inStock: product?.stock ? product.stock > 0 : true,
     imageURL: product?.imageURL || "",
     specifications: product?.specifications || {},
     features: product?.features || [],
-  })
-  const [newFeature, setNewFeature] = useState("")
-  const [newSpecKey, setNewSpecKey] = useState("")
-  const [newSpecValue, setNewSpecValue] = useState("")
-  const [error, setError] = useState("")
+  });
+  const [newFeature, setNewFeature] = useState("");
+  const [newSpecKey, setNewSpecKey] = useState("");
+  const [newSpecValue, setNewSpecValue] = useState("");
+  const [error, setError] = useState("");
 
   const handleInputChange = (field: string, value: any) => {
-    setFormData((prev) => ({ ...prev, [field]: value }))
-  }
+    setFormData((prev) => ({ ...prev, [field]: value }));
+  };
 
   const addFeature = () => {
     if (newFeature.trim()) {
       setFormData((prev) => ({
         ...prev,
         features: [...prev.features, newFeature.trim()],
-      }))
-      setNewFeature("")
+      }));
+      setNewFeature("");
     }
-  }
+  };
 
   const removeFeature = (index: number) => {
     setFormData((prev) => ({
       ...prev,
       features: prev.features.filter((_, i) => i !== index),
-    }))
-  }
+    }));
+  };
 
   const addSpecification = () => {
     if (newSpecKey.trim() && newSpecValue.trim()) {
@@ -65,35 +88,36 @@ export default function ProductForm({ product, onSubmit, onCancel, loading }: Pr
           ...prev.specifications,
           [newSpecKey.trim()]: newSpecValue.trim(),
         },
-      }))
-      setNewSpecKey("")
-      setNewSpecValue("")
+      }));
+      setNewSpecKey("");
+      setNewSpecValue("");
     }
-  }
+  };
 
   const removeSpecification = (key: string) => {
     setFormData((prev) => {
-      const newSpecs = { ...prev.specifications }
-      delete newSpecs[key]
-      return { ...prev, specifications: newSpecs }
-    })
-  }
+      const newSpecs = { ...prev.specifications };
+      delete newSpecs[key];
+      return { ...prev, specifications: newSpecs };
+    });
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    setError("")
+    e.preventDefault();
+    setError("");
 
     if (!formData.name || !formData.description || formData.price <= 0) {
-      setError("Please fill in all required fields")
-      return
+      setError("Please fill in all required fields");
+      return;
     }
 
     try {
-      await onSubmit(formData)
+      const slug = generateSlug(formData.name);
+      await onSubmit({ ...formData, slug });
     } catch (err: any) {
-      setError(err.message || "Failed to save product")
+      setError(err.message || "Failed to save product");
     }
-  }
+  };
 
   return (
     <Card>
@@ -121,7 +145,10 @@ export default function ProductForm({ product, onSubmit, onCancel, loading }: Pr
 
             <div className="space-y-2">
               <Label htmlFor="category">Category *</Label>
-              <Select value={formData.category} onValueChange={(value) => handleInputChange("category", value)}>
+              <Select
+                value={formData.category}
+                onValueChange={(value) => handleInputChange("category", value)}
+              >
                 <SelectTrigger>
                   <SelectValue />
                 </SelectTrigger>
@@ -140,7 +167,12 @@ export default function ProductForm({ product, onSubmit, onCancel, loading }: Pr
                 min="0"
                 step="0.01"
                 value={formData.price}
-                onChange={(e) => handleInputChange("price", Number.parseFloat(e.target.value) || 0)}
+                onChange={(e) =>
+                  handleInputChange(
+                    "price",
+                    Number.parseFloat(e.target.value) || 0
+                  )
+                }
                 required
               />
             </div>
@@ -152,9 +184,31 @@ export default function ProductForm({ product, onSubmit, onCancel, loading }: Pr
                 type="number"
                 min="0"
                 value={formData.stock}
-                onChange={(e) => handleInputChange("stock", Number.parseInt(e.target.value) || 0)}
+                onChange={(e) =>
+                  handleInputChange(
+                    "stock",
+                    Number.parseInt(e.target.value) || 0
+                  )
+                }
                 required
               />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="inStock">Availability *</Label>
+              <Select
+                value={formData.inStock ? "true" : "false"}
+                onValueChange={(value) =>
+                  handleInputChange("inStock", value === "true")
+                }
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Select status" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="true">In Stock</SelectItem>
+                  <SelectItem value="false">Out of Stock</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
           </div>
 
@@ -162,7 +216,7 @@ export default function ProductForm({ product, onSubmit, onCancel, loading }: Pr
             <Label htmlFor="imageURL">Image URL</Label>
             <Input
               id="imageURL"
-              type="url"
+              type="string"
               value={formData.imageURL}
               onChange={(e) => handleInputChange("imageURL", e.target.value)}
               placeholder="https://example.com/image.jpg"
@@ -187,7 +241,12 @@ export default function ProductForm({ product, onSubmit, onCancel, loading }: Pr
               {formData.features.map((feature, index) => (
                 <div key={index} className="flex items-center gap-2">
                   <Input value={feature} readOnly className="flex-1" />
-                  <Button type="button" variant="ghost" size="sm" onClick={() => removeFeature(index)}>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => removeFeature(index)}
+                  >
                     <X className="h-4 w-4" />
                   </Button>
                 </div>
@@ -199,7 +258,12 @@ export default function ProductForm({ product, onSubmit, onCancel, loading }: Pr
                   placeholder="Add a feature"
                   className="flex-1"
                 />
-                <Button type="button" variant="outline" size="sm" onClick={addFeature}>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={addFeature}
+                >
                   <Plus className="h-4 w-4" />
                 </Button>
               </div>
@@ -214,7 +278,12 @@ export default function ProductForm({ product, onSubmit, onCancel, loading }: Pr
                 <div key={key} className="flex items-center gap-2">
                   <Input value={key} readOnly className="flex-1" />
                   <Input value={value} readOnly className="flex-1" />
-                  <Button type="button" variant="ghost" size="sm" onClick={() => removeSpecification(key)}>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => removeSpecification(key)}
+                  >
                     <X className="h-4 w-4" />
                   </Button>
                 </div>
@@ -232,7 +301,12 @@ export default function ProductForm({ product, onSubmit, onCancel, loading }: Pr
                   placeholder="Specification value"
                   className="flex-1"
                 />
-                <Button type="button" variant="outline" size="sm" onClick={addSpecification}>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={addSpecification}
+                >
                   <Plus className="h-4 w-4" />
                 </Button>
               </div>
@@ -241,7 +315,11 @@ export default function ProductForm({ product, onSubmit, onCancel, loading }: Pr
 
           <div className="flex gap-4">
             <Button type="submit" disabled={loading}>
-              {loading ? "Saving..." : product ? "Update Product" : "Create Product"}
+              {loading
+                ? "Saving..."
+                : product
+                ? "Update Product"
+                : "Create Product"}
             </Button>
             <Button type="button" variant="outline" onClick={onCancel}>
               Cancel
@@ -250,5 +328,5 @@ export default function ProductForm({ product, onSubmit, onCancel, loading }: Pr
         </form>
       </CardContent>
     </Card>
-  )
+  );
 }

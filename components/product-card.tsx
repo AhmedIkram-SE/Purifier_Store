@@ -70,7 +70,7 @@ export default function ProductCard({ product }: ProductCardProps) {
         </div>
       </CardContent>
       <CardFooter className="p-4 pt-0 flex gap-2 w-full box-border">
-        <Link href={`/products/${product._id}`} className="flex-1 min-w-0">
+        <Link href={`/products/${product.slug}`} className="flex-1 min-w-0">
           <Button
             variant="outline"
             className="w-full bg-transparent text-xs sm:text-sm md:text-sm flex items-center justify-center whitespace-normal break-words leading-tight text-center px-2 py-2"
