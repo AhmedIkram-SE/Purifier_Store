@@ -6,6 +6,7 @@ import { Analytics } from "@vercel/analytics/next";
 import { Suspense } from "react";
 import { CartProvider } from "@/contexts/cart-context";
 import { AuthProvider } from "@/contexts/auth-context";
+import { WishlistProvider } from "@/contexts/wishlist-context";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -62,7 +63,9 @@ export default function RootLayout({
       <body className={`font-sans ${GeistSans.variable} ${GeistMono.variable}`}>
         <AuthProvider>
           <CartProvider>
-            <Suspense fallback={null}>{children}</Suspense>
+            <WishlistProvider>
+              <Suspense fallback={null}>{children}</Suspense>
+            </WishlistProvider>
           </CartProvider>
         </AuthProvider>
         <Analytics />

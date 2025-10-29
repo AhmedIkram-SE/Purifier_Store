@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useParams } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import Image from "next/image";
 import Navbar from "@/components/navbar";
 import Footer from "@/components/footer";
@@ -11,14 +11,25 @@ import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import type { Product } from "@/models/Product";
 import { useCart } from "@/contexts/cart-context";
+import { useWishlist } from "@/contexts/wishlist-context";
+import { useAuth } from "@/contexts/auth-context";
 import { ShoppingCart, Heart, Share2, Check, Star } from "lucide-react";
+import ReviewDisplay from "@/components/review-display";
+import type { Review } from "@/models/Review";
 
 export default function ProductDetailPage() {
   const [product, setProduct] = useState<Product | null>(null);
   const [loading, setLoading] = useState(true);
   const [quantity, setQuantity] = useState(1);
+  const [reviews, setReviews] = useState<Review[]>([]);
+  const [reviewsLoading, setReviewsLoading] = useState(false);
+  const [showAllReviews, setShowAllReviews] = useState(false);
   const params = useParams();
+  const router = useRouter();
   const { addItem } = useCart(); // Added cart functionality
+  const { addToWishlist, removeFromWishlist, isInWishlist } = useWishlist();
+  const { isAuthenticated } = useAuth();
+  const inWishlist = isInWishlist(product?._id || "");
 
   useEffect(() => {
     const fetchProduct = async () => {
@@ -27,6 +38,7 @@ export default function ProductDetailPage() {
         if (response.ok) {
           const data = await response.json();
           setProduct(data);
+          fetchReviews(data._id);
         }
       } catch (error) {
         console.error("Error fetching product:", error);
@@ -40,6 +52,20 @@ export default function ProductDetailPage() {
     }
   }, [params.slug]);
 
+  const fetchReviews = async (productId: string) => {
+    setReviewsLoading(true);
+    try {
+      const response = await fetch(`/api/reviews?productId=${productId}`);
+      if (response.ok) {
+        const data = await response.json();
+        setReviews(data);
+      }
+    } catch (error) {
+      console.error("Error fetching reviews:", error);
+    } finally {
+      setReviewsLoading(false);
+    }
+  };
   const formatPrice = (price: number) => {
     return new Intl.NumberFormat("en-US", {
       style: "currency",
@@ -60,6 +86,26 @@ export default function ProductDetailPage() {
       });
     }
   };
+
+  const handleWishlistToggle = async () => {
+    if (!isAuthenticated) {
+      router.push(`/auth/login?next=/products/${product?._id}`);
+      return;
+    }
+
+    if (inWishlist) {
+      await removeFromWishlist(product?._id!);
+    } else {
+      await addToWishlist(product?._id!);
+    }
+  };
+
+  const averageRating =
+    reviews.length > 0
+      ? (
+          reviews.reduce((sum, r) => sum + r.rating, 0) / reviews.length
+        ).toFixed(1)
+      : 0;
 
   if (loading) {
     return (
@@ -101,7 +147,7 @@ export default function ProductDetailPage() {
       </div>
     );
   }
-
+  const displayedReviews = showAllReviews ? reviews : reviews.slice(0, 5);
   return (
     <div className="min-h-screen bg-background">
       <Navbar />
@@ -136,12 +182,16 @@ export default function ProductDetailPage() {
                   {[...Array(5)].map((_, i) => (
                     <Star
                       key={i}
-                      className="h-4 w-4 fill-yellow-400 text-yellow-400"
+                      className={`h-4 w-4 ${
+                        i < Math.round(Number(averageRating))
+                          ? "fill-yellow-400 text-yellow-400"
+                          : "text-muted-foreground"
+                      }`}
                     />
                   ))}
                 </div>
                 <span className="text-muted-foreground text-sm">
-                  (4.8) • 124 reviews
+                  ({averageRating}) • {reviews.length} reviews
                 </span>
               </div>
               <p className="text-4xl font-bold text-primary mb-4">
@@ -209,8 +259,17 @@ export default function ProductDetailPage() {
                   <ShoppingCart className="h-4 w-4 mr-2" />
                   Add to Cart
                 </Button>
-                <Button variant="outline" size="lg">
-                  <Heart className="h-4 w-4" />
+                <Button
+                  variant="outline"
+                  size="lg"
+                  onClick={handleWishlistToggle}
+                  className={inWishlist ? "bg-red-50" : ""}
+                >
+                  <Heart
+                    className={`h-4 w-4 ${
+                      inWishlist ? "fill-red-500 text-red-500" : ""
+                    }`}
+                  />
                 </Button>
                 <Button variant="outline" size="lg">
                   <Share2 className="h-4 w-4" />
@@ -267,6 +326,58 @@ export default function ProductDetailPage() {
               </Card>
             </div>
           )}
+        <div className="mt-16">
+          <h2 className="text-2xl font-bold text-primary mb-6">
+            Customer Reviews
+          </h2>
+
+          {reviewsLoading ? (
+            <div className="space-y-4">
+              {[...Array(3)].map((_, i) => (
+                <Card key={i} className="animate-pulse">
+                  <CardContent className="p-4">
+                    <div className="h-4 bg-muted rounded w-1/4 mb-2"></div>
+                    <div className="h-4 bg-muted rounded w-3/4"></div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          ) : reviews.length === 0 ? (
+            <Card>
+              <CardContent className="p-8 text-center">
+                <p className="text-muted-foreground">
+                  No reviews yet. Be the first to review this product!
+                </p>
+              </CardContent>
+            </Card>
+          ) : (
+            <div className="space-y-4">
+              {displayedReviews.map((review) => (
+                <ReviewDisplay key={review._id} review={review} />
+              ))}
+
+              {reviews.length > 5 && !showAllReviews && (
+                <Button
+                  variant="outline"
+                  className="w-full bg-transparent"
+                  onClick={() => setShowAllReviews(true)}
+                >
+                  See All {reviews.length} Reviews
+                </Button>
+              )}
+
+              {showAllReviews && reviews.length > 5 && (
+                <Button
+                  variant="outline"
+                  className="w-full bg-transparent"
+                  onClick={() => setShowAllReviews(false)}
+                >
+                  Show Less
+                </Button>
+              )}
+            </div>
+          )}
+        </div>
       </div>
 
       <Footer />

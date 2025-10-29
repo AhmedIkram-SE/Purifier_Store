@@ -70,7 +70,7 @@ export default function Footer() {
                 Contact Us
               </Link>
               <Link
-                href="/shipping"
+                href="/shipping-info"
                 className="block text-muted-foreground hover:text-primary transition-colors text-sm"
               >
                 Shipping Info

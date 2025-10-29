@@ -35,6 +35,9 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     { url: "https://purelife.dev/products", lastModified: new Date() },
     { url: "https://purelife.dev/about", lastModified: new Date() },
     { url: "https://purelife.dev/contact", lastModified: new Date() },
+    { url: "https://purelife.dev/warranty", lastModified: new Date() },
+    { url: "https://purelife.dev/shipping-info", lastModified: new Date() },
+    { url: "https://purelife.dev/returns", lastModified: new Date() },
     {
       url: "https://purelife.dev/products?category=water-purifier",
       lastModified: new Date(),

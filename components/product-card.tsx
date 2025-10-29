@@ -7,7 +7,10 @@ import { Card, CardContent, CardFooter } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import type { Product } from "@/models/Product";
 import { useCart } from "@/contexts/cart-context";
-import { ShoppingCart } from "lucide-react";
+import { useWishlist } from "@/contexts/wishlist-context";
+import { useAuth } from "@/contexts/auth-context";
+import { useRouter } from "next/navigation";
+import { ShoppingCart, Heart } from "lucide-react";
 
 interface ProductCardProps {
   product: Product;
@@ -15,6 +18,10 @@ interface ProductCardProps {
 
 export default function ProductCard({ product }: ProductCardProps) {
   const { addItem } = useCart();
+  const { addToWishlist, removeFromWishlist, isInWishlist } = useWishlist();
+  const { isAuthenticated } = useAuth();
+  const router = useRouter();
+  const inWishlist = isInWishlist(product._id!);
 
   const formatPrice = (price: number) => {
     return new Intl.NumberFormat("en-US", {
@@ -33,6 +40,18 @@ export default function ProductCard({ product }: ProductCardProps) {
       stock: product.stock,
     });
   };
+  const handleWishlistToggle = async () => {
+    if (!isAuthenticated) {
+      router.push(`/auth/login?next=/products/${product._id}`);
+      return;
+    }
+
+    if (inWishlist) {
+      await removeFromWishlist(product._id!);
+    } else {
+      await addToWishlist(product._id!);
+    }
+  };
 
   return (
     <Card className="group hover:shadow-lg transition-shadow duration-300">
@@ -49,6 +68,16 @@ export default function ProductCard({ product }: ProductCardProps) {
               <Badge variant="destructive">Out of Stock</Badge>
             </div>
           )}
+          <button
+            onClick={handleWishlistToggle}
+            className="absolute top-2 right-2 p-2 bg-white rounded-full shadow-md hover:shadow-lg transition-shadow"
+          >
+            <Heart
+              className={`h-5 w-5 transition-colors ${
+                inWishlist ? "fill-red-500 text-red-500" : "text-gray-400"
+              }`}
+            />
+          </button>
         </div>
         <div className="p-4">
           <div className="flex items-center justify-between mb-2">
