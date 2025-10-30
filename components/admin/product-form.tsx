@@ -16,11 +16,18 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Badge } from "@/components/ui/badge";
 import type { Product } from "@/models/Product";
 import { X, Plus } from "lucide-react";
 
-function generateSlug(name: string) {
-  return name
+function generateSlug(name: string, category: string) {
+  // Convert category to readable format
+  const categorySlug = category.replace(/-/g, " ");
+  
+  // Combine category and name
+  const fullText = `${categorySlug} ${name}`;
+  
+  return fullText
     .toLowerCase()
     .replace(/[^a-z0-9]+/g, "-")
     .replace(/(^-|-$)+/g, "");
@@ -51,12 +58,14 @@ export default function ProductForm({
     stock: product?.stock || 0,
     inStock: product?.stock ? product.stock > 0 : true,
     imageURL: product?.imageURL || "",
+    keywords: product?.keywords || [],
     specifications: product?.specifications || {},
     features: product?.features || [],
   });
   const [newFeature, setNewFeature] = useState("");
   const [newSpecKey, setNewSpecKey] = useState("");
   const [newSpecValue, setNewSpecValue] = useState("");
+  const [keywordInput, setKeywordInput] = useState("");
   const [error, setError] = useState("");
 
   const handleInputChange = (field: string, value: any) => {
@@ -102,6 +111,55 @@ export default function ProductForm({
     });
   };
 
+  const addKeyword = (keyword: string) => {
+    const trimmedKeyword = keyword.trim().toLowerCase();
+    if (trimmedKeyword && !formData.keywords.includes(trimmedKeyword)) {
+      setFormData((prev) => ({
+        ...prev,
+        keywords: [...prev.keywords, trimmedKeyword],
+      }));
+    }
+  };
+
+  const removeKeyword = (index: number) => {
+    setFormData((prev) => ({
+      ...prev,
+      keywords: prev.keywords.filter((_, i) => i !== index),
+    }));
+  };
+
+  const handleKeywordInput = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    const value = (e.target as HTMLInputElement).value;
+
+    if (e.key === "Enter" || e.key === "," || e.key === "Tab") {
+      e.preventDefault();
+      if (value.trim()) {
+        addKeyword(value);
+        setKeywordInput("");
+      }
+    }
+  };
+
+  const handleKeywordInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    let value = e.target.value;
+
+    // Auto-add keyword when comma is typed
+    if (value.includes(",")) {
+      const keywords = value.split(",");
+      const lastKeyword = keywords.pop() || "";
+
+      keywords.forEach((keyword) => {
+        if (keyword.trim()) {
+          addKeyword(keyword);
+        }
+      });
+
+      setKeywordInput(lastKeyword);
+    } else {
+      setKeywordInput(value);
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
@@ -112,7 +170,7 @@ export default function ProductForm({
     }
 
     try {
-      const slug = generateSlug(formData.name);
+      const slug = generateSlug(formData.name, formData.category);
       await onSubmit({ ...formData, slug });
     } catch (err: any) {
       setError(err.message || "Failed to save product");
@@ -232,6 +290,49 @@ export default function ProductForm({
               rows={4}
               required
             />
+          </div>
+
+          {/* Keywords */}
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="keywords">Keywords (for SEO)</Label>
+              <p className="text-sm text-muted-foreground">
+                Enter keywords separated by commas or press Enter to add. These
+                will be used for SEO metadata.
+              </p>
+
+              {/* Display existing keywords as badges */}
+              {formData.keywords.length > 0 && (
+                <div className="flex flex-wrap gap-2 p-2 border rounded-md bg-muted/50">
+                  {formData.keywords.map((keyword, index) => (
+                    <Badge
+                      key={index}
+                      variant="secondary"
+                      className="cursor-pointer hover:bg-destructive hover:text-destructive-foreground transition-colors"
+                      onClick={() => removeKeyword(index)}
+                    >
+                      {keyword}
+                      <X className="h-3 w-3 ml-1" />
+                    </Badge>
+                  ))}
+                </div>
+              )}
+
+              {/* Keyword input */}
+              <Input
+                id="keywords"
+                value={keywordInput}
+                onChange={handleKeywordInputChange}
+                onKeyDown={handleKeywordInput}
+                placeholder="Type keywords and press Enter or use commas to separate (e.g., water filter, purification, clean water)"
+                className="w-full"
+              />
+
+              <div className="text-xs text-muted-foreground">
+                💡 Tip: Type keywords and press Enter, Tab, or use commas to add
+                them as tags. Click on any tag to remove it.
+              </div>
+            </div>
           </div>
 
           {/* Features */}

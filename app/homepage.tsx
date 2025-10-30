@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -43,89 +44,64 @@ export default function HomePage() {
     <div className="min-h-screen bg-background">
       <Navbar />
 
-      {/* Hero Section */}
-      <section className="relative bg-gradient-to-r from-primary/5 to-accent/5 py-20">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center">
-            <h1 className="text-4xl md:text-6xl font-bold text-primary mb-6 text-balance">
-              Pure Water, Clean Air
-              <span className="block text-accent">Healthier Living</span>
-            </h1>
-            <p className="text-xl text-muted-foreground mb-8 max-w-2xl mx-auto text-pretty">
-              Discover our premium collection of water and air purifiers
-              designed to create a healthier environment for you and your
-              family.
-            </p>
-            <div className="flex flex-col sm:flex-row gap-4 justify-center">
-              <Link href="/products?category=water-purifier">
-                <Button size="lg" className="w-full sm:w-auto">
-                  Shop Water Purifiers
-                  <ChevronRight className="ml-2 h-4 w-4" />
-                </Button>
-              </Link>
-              <Link href="/products?category=air-purifier">
-                <Button
-                  variant="outline"
-                  size="lg"
-                  className="w-full sm:w-auto bg-transparent"
-                >
-                  Shop Air Purifiers
-                  <ChevronRight className="ml-2 h-4 w-4" />
-                </Button>
-              </Link>
-            </div>
-          </div>
-        </div>
-      </section>
+      <section className="relative overflow-hidden">
+        {/* Background gradient */}
+        <div className="absolute inset-0 bg-gradient-to-br from-blue-50 via-white to-blue-50 dark:from-slate-800 dark:via-slate-700 dark:to-slate-900" />
 
-      {/* Features Section */}
-      <section className="py-16">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
-            <Card className="text-center">
-              <CardContent className="p-6">
-                <Shield className="h-12 w-12 text-accent mx-auto mb-4" />
-                <h3 className="font-semibold text-foreground mb-2">
-                  Quality Guaranteed
-                </h3>
-                <p className="text-muted-foreground text-sm">
-                  Premium filtration technology with certified quality standards
+        {/* Content container */}
+        <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-2 py-16 md:py-24">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-12 items-center">
+            {/* Text and buttons - centered on mobile, left side on desktop */}
+            <div className="flex flex-col justify-center space-y-6 md:space-y-8 text-center md:text-left">
+              <div className="space-y-4 md:space-y-4">
+                <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold text-primary leading-tight text-balance">
+                  PureLife — Breathe Pure, Live Better
+                </h1>
+                <p className="text-base sm:text-lg md:text-lg lg:text-xl text-muted-foreground text-pretty max-w-2xl mx-auto md:mx-0">
+                  Experience premium air and water purification technology
+                  designed for your healthier lifestyle
                 </p>
-              </CardContent>
-            </Card>
-            <Card className="text-center">
-              <CardContent className="p-6">
-                <Truck className="h-12 w-12 text-accent mx-auto mb-4" />
-                <h3 className="font-semibold text-foreground mb-2">
-                  Free Shipping
-                </h3>
-                <p className="text-muted-foreground text-sm">
-                  Free delivery on all orders over $99 nationwide
-                </p>
-              </CardContent>
-            </Card>
-            <Card className="text-center">
-              <CardContent className="p-6">
-                <Award className="h-12 w-12 text-accent mx-auto mb-4" />
-                <h3 className="font-semibold text-foreground mb-2">
-                  2 Year Warranty
-                </h3>
-                <p className="text-muted-foreground text-sm">
-                  Comprehensive warranty coverage on all products
-                </p>
-              </CardContent>
-            </Card>
-            <Card className="text-center">
-              <CardContent className="p-6">
-                <Droplets className="h-12 w-12 text-accent mx-auto mb-4" />
-                <h3 className="font-semibold text-foreground mb-2">
-                  Expert Support
-                </h3>
-                <p className="text-muted-foreground text-sm">
-                  24/7 customer support from water and air quality experts
-                </p>
-              </CardContent>
-            </Card>
+              </div>
+
+              {/* Buttons */}
+              <div className="flex flex-col sm:flex-row gap-4 justify-center md:justify-start">
+                <Link
+                  href="/products?category=air-purifier"
+                  className="flex-1 sm:flex-none"
+                >
+                  <Button size="lg" className="w-full sm:w-auto">
+                    Shop Now
+                    <ChevronRight className="ml-2 h-4 w-4" />
+                  </Button>
+                </Link>
+                <Link href="/products" className="flex-1 sm:flex-none">
+                  <Button
+                    variant="outline"
+                    size="lg"
+                    className="w-full sm:w-auto bg-transparent"
+                  >
+                    Explore Products
+                    <ChevronRight className="ml-2 h-4 w-4" />
+                  </Button>
+                </Link>
+              </div>
+            </div>
+
+            {/* Right side - Image with fade effect (desktop only) */}
+            <div className="hidden md:flex relative h-full min-h-[500px] items-center justify-center">
+              {/* Image container with gradient fade */}
+              <div className="relative w-full h-full flex items-center justify-center">
+                <div className="absolute inset-0 bg-gradient-to-l from-transparent via-transparent to-white dark:to-slate-800 pointer-events-none z-10" />
+                <Image
+                  src="/premium-air-purifier-hero.jpg"
+                  alt="Premium Air Purifier"
+                  fill
+                  className="object-cover object-center rounded-lg"
+                  priority
+                  sizes="50vw"
+                />
+              </div>
+            </div>
           </div>
         </div>
       </section>
@@ -216,6 +192,58 @@ export default function HomePage() {
                 <ChevronRight className="ml-2 h-4 w-4" />
               </Button>
             </Link>
+          </div>
+        </div>
+      </section>
+
+      {/* Features Section */}
+      <section className="py-16">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
+            <Card className="text-center">
+              <CardContent className="p-6">
+                <Shield className="h-12 w-12 text-accent mx-auto mb-4" />
+                <h3 className="font-semibold text-foreground mb-2">
+                  Quality Guaranteed
+                </h3>
+                <p className="text-muted-foreground text-sm">
+                  Premium filtration technology with certified quality standards
+                </p>
+              </CardContent>
+            </Card>
+            <Card className="text-center">
+              <CardContent className="p-6">
+                <Truck className="h-12 w-12 text-accent mx-auto mb-4" />
+                <h3 className="font-semibold text-foreground mb-2">
+                  Free Shipping
+                </h3>
+                <p className="text-muted-foreground text-sm">
+                  Free delivery on all orders over $99 nationwide
+                </p>
+              </CardContent>
+            </Card>
+            <Card className="text-center">
+              <CardContent className="p-6">
+                <Award className="h-12 w-12 text-accent mx-auto mb-4" />
+                <h3 className="font-semibold text-foreground mb-2">
+                  2 Year Warranty
+                </h3>
+                <p className="text-muted-foreground text-sm">
+                  Comprehensive warranty coverage on all products
+                </p>
+              </CardContent>
+            </Card>
+            <Card className="text-center">
+              <CardContent className="p-6">
+                <Droplets className="h-12 w-12 text-accent mx-auto mb-4" />
+                <h3 className="font-semibold text-foreground mb-2">
+                  Expert Support
+                </h3>
+                <p className="text-muted-foreground text-sm">
+                  24/7 customer support from water and air quality experts
+                </p>
+              </CardContent>
+            </Card>
           </div>
         </div>
       </section>

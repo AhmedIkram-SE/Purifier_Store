@@ -7,6 +7,7 @@ export interface Product {
   price: number;
   stock: number;
   imageURL: string;
+  keywords: string[];
   specifications: {
     [key: string]: string;
   };

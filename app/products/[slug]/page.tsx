@@ -31,19 +31,29 @@ export async function generateMetadata({
     product.description?.slice(0, 150) ||
     "Explore our premium air and water purifiers.";
 
+  // Combine product keywords with default ones
+  const defaultKeywords = [
+    product.category,
+    product.name,
+    "PureLife",
+    "air purifier",
+    "water purifier",
+    "eco filter",
+    "reverse osmosis",
+    "clean water",
+  ];
+
+  const allKeywords = [...defaultKeywords, ...(product.keywords || [])].filter(
+    (keyword, index, array) =>
+      // Remove duplicates (case insensitive)
+      array.findIndex((k) => k.toLowerCase() === keyword.toLowerCase()) ===
+      index
+  );
+
   return {
     title,
     description,
-    keywords: [
-      product.category,
-      product.name,
-      "PureLife",
-      "air purifier",
-      "water purifier",
-      "eco filter",
-      "reverse osmosis",
-      "clean water",
-    ],
+    keywords: allKeywords,
     openGraph: {
       title,
       description,

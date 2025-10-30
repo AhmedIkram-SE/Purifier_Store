@@ -94,6 +94,12 @@ export default function OrdersPage() {
           ? `/api/reviews/${existingReview._id}`
           : "/api/reviews";
 
+      console.log(`Submitting review: ${method} ${url}`, {
+        productId,
+        rating,
+        comment,
+      });
+
       const response = await fetch(url, {
         method,
         headers: { "Content-Type": "application/json" },
@@ -106,16 +112,35 @@ export default function OrdersPage() {
 
       if (response.ok) {
         const data = await response.json();
+        console.log("Review submission response:", data);
+
+        // Update the review in state
         setProductReviews((prev) => ({
           ...prev,
           [productId]: data,
         }));
         setReviewingProductId(null);
+
+        // Fallback: if data doesn't look right, refetch
+        if (!data._id || !data.rating || !data.comment) {
+          console.log("Response data incomplete, refetching review...");
+          setTimeout(() => fetchProductReview(productId), 100);
+        }
       } else {
         const error = await response.json();
+
+        // If the error is about existing review, refetch reviews to show the existing one
+        if (error.error?.includes("already reviewed")) {
+          console.log("Review already exists, refetching reviews...");
+          await fetchProductReview(productId);
+          setReviewingProductId(null);
+          return;
+        }
+
         throw new Error(error.error || "Failed to submit review");
       }
     } catch (error: any) {
+      console.error("Error submitting review:", error);
       throw error;
     } finally {
       setReviewsLoading((prev) => ({ ...prev, [productId]: false }));
@@ -259,7 +284,7 @@ export default function OrdersPage() {
                             </div>
                           </div>
                           {order.status === "delivered" && (
-                            <div className="mt-3 ml-20">
+                            <div className="mt-3">
                               {reviewingProductId === item.productId ? (
                                 <ReviewForm
                                   productId={item.productId}

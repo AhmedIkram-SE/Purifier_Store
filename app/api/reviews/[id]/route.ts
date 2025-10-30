@@ -5,7 +5,7 @@ import { ObjectId } from "mongodb";
 
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const token = request.cookies.get("token")?.value;
@@ -21,6 +21,7 @@ export async function PUT(
       return NextResponse.json({ error: "Invalid token" }, { status: 401 });
     }
 
+    const { id } = await params;
     const { rating, comment } = await request.json();
 
     // Validate input
@@ -43,7 +44,7 @@ export async function PUT(
 
     // Check if review exists and belongs to user
     const review = await db.collection("reviews").findOne({
-      _id: new ObjectId(params.id),
+      _id: new ObjectId(id),
       userId: decoded.userId,
     });
 
@@ -54,23 +55,30 @@ export async function PUT(
       );
     }
 
-    // Update review
-    const result = await db.collection("reviews").updateOne(
-      { _id: new ObjectId(params.id) },
+    // Update review and return the updated document
+    const result = await db.collection("reviews").findOneAndUpdate(
+      { _id: new ObjectId(id) },
       {
         $set: {
           rating,
           comment,
           updatedAt: new Date(),
         },
-      }
+      },
+      { returnDocument: "after" }
     );
 
-    if (result.matchedCount === 0) {
+    if (!result) {
       return NextResponse.json({ error: "Review not found" }, { status: 404 });
     }
 
-    return NextResponse.json({ message: "Review updated successfully" });
+    // Return the updated review with _id as string
+    const updatedReview = {
+      ...result,
+      _id: result._id.toString(),
+    };
+
+    return NextResponse.json(updatedReview);
   } catch (error) {
     console.error("Error updating review:", error);
     return NextResponse.json(
