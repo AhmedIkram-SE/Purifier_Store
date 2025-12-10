@@ -197,7 +197,7 @@ export default function ProductDetailPage() {
               <p className="text-4xl font-bold text-primary mb-4">
                 {formatPrice(product.price)}
               </p>
-              <p className="text-muted-foreground leading-relaxed">
+              <p className="text-muted-foreground leading-relaxed whitespace-pre-wrap">
                 {product.description}
               </p>
             </div>

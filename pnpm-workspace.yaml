@@ -1,5 +1,5 @@
 onlyBuiltDependencies:
-  - '@mongodb-js/zstd'
+  - "@mongodb-js/zstd"
   - kerberos
   - mongodb-client-encryption
   - sharp

@@ -18,15 +18,16 @@ import {
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import type { Product } from "@/models/Product";
-import { X, Plus } from "lucide-react";
+import { X, Plus, Sparkles, Loader } from "lucide-react";
+import { useAIEnhance } from "@/hooks/use-ai-enhance";
 
 function generateSlug(name: string, category: string) {
   // Convert category to readable format
   const categorySlug = category.replace(/-/g, " ");
-  
+
   // Combine category and name
   const fullText = `${categorySlug} ${name}`;
-  
+
   return fullText
     .toLowerCase()
     .replace(/[^a-z0-9]+/g, "-")
@@ -48,6 +49,8 @@ export default function ProductForm({
   onCancel,
   loading,
 }: ProductFormProps) {
+  const { enhance, loading: aiLoading, error: aiError } = useAIEnhance();
+
   const [formData, setFormData] = useState({
     name: product?.name || "",
     category:
@@ -67,6 +70,12 @@ export default function ProductForm({
   const [newSpecValue, setNewSpecValue] = useState("");
   const [keywordInput, setKeywordInput] = useState("");
   const [error, setError] = useState("");
+  const [aiMessageDescription, setAiMessageDescription] = useState<
+    string | null
+  >(null);
+  const [aiMessageKeywords, setAiMessageKeywords] = useState<string | null>(
+    null
+  );
 
   const handleInputChange = (field: string, value: any) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
@@ -137,6 +146,67 @@ export default function ProductForm({
         addKeyword(value);
         setKeywordInput("");
       }
+    }
+  };
+
+  const handleEnhanceDescription = async () => {
+    if (!formData.name || !formData.category || !formData.description) {
+      setAiMessageDescription(
+        "Please fill in Product Name, Category, and Description first"
+      );
+      return;
+    }
+
+    const enhanced = await enhance(
+      formData.name,
+      formData.category,
+      formData.description,
+      "description"
+    );
+
+    if (enhanced) {
+      handleInputChange("description", enhanced);
+      setAiMessageDescription(
+        "✓ Description enhanced! Review and adjust as needed."
+      );
+    } else {
+      setAiMessageDescription(
+        "Failed to enhance description. Check your API key."
+      );
+    }
+  };
+
+  const handleEnhanceKeywords = async () => {
+    if (!formData.name || !formData.category || !formData.description) {
+      setAiMessageKeywords(
+        "Please fill in Product Name, Category, and Description first"
+      );
+      return;
+    }
+
+    const enhanced = await enhance(
+      formData.name,
+      formData.category,
+      formData.description,
+      "keywords"
+    );
+
+    if (enhanced) {
+      // Parse keywords and add them
+      const keywords = enhanced
+        .split(",")
+        .map((kw) => kw.trim().toLowerCase())
+        .filter((kw) => kw && !formData.keywords.includes(kw));
+
+      setFormData((prev) => ({
+        ...prev,
+        keywords: [...prev.keywords, ...keywords],
+      }));
+      setAiMessageKeywords(
+        "✓ Keywords added! Review and remove any you don't want."
+      );
+    } else {
+      setAiMessageKeywords("Failed to generate keywords. Check your API key.");
     }
   };
 
@@ -290,6 +360,37 @@ export default function ProductForm({
               rows={4}
               required
             />
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={handleEnhanceDescription}
+              disabled={aiLoading || !formData.name || !formData.category}
+              className="gap-2 mt-2"
+            >
+              {aiLoading ? (
+                <>
+                  <Loader className="h-4 w-4 animate-spin" />
+                  Enhancing...
+                </>
+              ) : (
+                <>
+                  <Sparkles className="h-4 w-4" />
+                  AI Enhance Description
+                </>
+              )}
+            </Button>
+            {aiMessageDescription && (
+              <Alert
+                variant={
+                  aiMessageDescription.startsWith("✓")
+                    ? "default"
+                    : "destructive"
+                }
+              >
+                <AlertDescription>{aiMessageDescription}</AlertDescription>
+              </Alert>
+            )}
           </div>
 
           {/* Keywords */}
@@ -327,6 +428,41 @@ export default function ProductForm({
                 placeholder="Type keywords and press Enter or use commas to separate (e.g., water filter, purification, clean water)"
                 className="w-full"
               />
+
+              <div className="flex gap-2 items-center">
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={handleEnhanceKeywords}
+                  disabled={aiLoading || !formData.name || !formData.category}
+                  className="gap-2 mt-2"
+                >
+                  {aiLoading ? (
+                    <>
+                      <Loader className="h-4 w-4 animate-spin" />
+                      Generating...
+                    </>
+                  ) : (
+                    <>
+                      <Sparkles className="h-4 w-4" />
+                      AI Generate Keywords
+                    </>
+                  )}
+                </Button>
+              </div>
+
+              {aiMessageKeywords && (
+                <Alert
+                  variant={
+                    aiMessageKeywords.startsWith("✓")
+                      ? "default"
+                      : "destructive"
+                  }
+                >
+                  <AlertDescription>{aiMessageKeywords}</AlertDescription>
+                </Alert>
+              )}
 
               <div className="text-xs text-muted-foreground">
                 💡 Tip: Type keywords and press Enter, Tab, or use commas to add
