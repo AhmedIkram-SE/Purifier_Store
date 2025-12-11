@@ -24,6 +24,7 @@ export default function ProductDetailPage() {
   const [reviews, setReviews] = useState<Review[]>([]);
   const [reviewsLoading, setReviewsLoading] = useState(false);
   const [showAllReviews, setShowAllReviews] = useState(false);
+  const [expandDescription, setExpandDescription] = useState(false);
   const params = useParams();
   const router = useRouter();
   const { addItem } = useCart(); // Added cart functionality
@@ -197,9 +198,22 @@ export default function ProductDetailPage() {
               <p className="text-4xl font-bold text-primary mb-4">
                 {formatPrice(product.price)}
               </p>
-              <p className="text-muted-foreground leading-relaxed whitespace-pre-wrap">
+              <p
+                className={`text-muted-foreground leading-relaxed whitespace-pre-wrap ${
+                  !expandDescription ? "line-clamp-3" : ""
+                }`}
+              >
                 {product.description}
               </p>
+              {product.description && product.description.length > 200 && (
+                <Button
+                  variant="link"
+                  className="px-0 h-auto font-semibold text-primary hover:text-primary/80"
+                  onClick={() => setExpandDescription(!expandDescription)}
+                >
+                  {expandDescription ? "Read Less" : "Read More"}
+                </Button>
+              )}
             </div>
 
             <Separator />
