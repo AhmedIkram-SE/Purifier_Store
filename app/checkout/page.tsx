@@ -3,7 +3,7 @@
 import type React from "react";
 
 import { useState, useEffect } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useRouter } from "next/navigation";
 import Image from "next/image";
 import Navbar from "@/components/navbar";
 import Footer from "@/components/footer";
@@ -13,16 +13,24 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 import { useCart } from "@/contexts/cart-context";
 import { useAuth } from "@/contexts/auth-context";
+import PaymentFormWrapper from "@/components/payment-form-wrapper";
 import type { Order } from "@/models/Order";
 
 export default function CheckoutPage() {
   const { items, totalPrice, clearCart } = useCart();
-  const { user, isAuthenticated, loading: authLoading } = useAuth();
+  const { user, isAuthenticated, loading: authLoading, token } = useAuth();
   const router = useRouter();
-  const params = useSearchParams();
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [paymentStage, setPaymentStage] = useState<"shipping" | "payment">(
+    "shipping"
+  );
+  const [clientSecret, setClientSecret] = useState<string | null>(null);
+  const [paymentIntentId, setPaymentIntentId] = useState<string | null>(null);
+
   const [formData, setFormData] = useState({
     name: "",
     email: "",
@@ -32,18 +40,6 @@ export default function CheckoutPage() {
     state: "",
     zipCode: "",
     country: "United States",
-  });
-
-  const [billingData, setBillingData] = useState({
-    cardNumber: "",
-    expiryDate: "",
-    cvv: "",
-    cardholderName: "",
-    billingStreet: "",
-    billingCity: "",
-    billingState: "",
-    billingZipCode: "",
-    billingCountry: "United States",
   });
 
   const [saveBillingInfo, setSaveBillingInfo] = useState(false);
@@ -62,32 +58,6 @@ export default function CheckoutPage() {
         name: user.name,
         email: user.email,
       }));
-
-      // Load saved billing info if available
-      const loadBillingInfo = async () => {
-        try {
-          const response = await fetch("/api/profile/billing");
-          if (response.ok) {
-            const data = await response.json();
-            if (data.billingInfo) {
-              setBillingData((prev) => ({
-                ...prev,
-                cardholderName: data.billingInfo.cardholderName || "",
-                billingStreet: data.billingInfo.billingAddress?.street || "",
-                billingCity: data.billingInfo.billingAddress?.city || "",
-                billingState: data.billingInfo.billingAddress?.state || "",
-                billingZipCode: data.billingInfo.billingAddress?.zipCode || "",
-                billingCountry:
-                  data.billingInfo.billingAddress?.country || "United States",
-              }));
-            }
-          }
-        } catch (error) {
-          console.error("Error loading billing info:", error);
-        }
-      };
-
-      loadBillingInfo();
     }
   }, [isAuthenticated, user]);
 
@@ -107,41 +77,73 @@ export default function CheckoutPage() {
     });
   };
 
-  const handleBillingChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setBillingData({
-      ...billingData,
-      [e.target.name]: e.target.value,
-    });
-  };
-
-  const handleSubmit = async (e: React.FormEvent) => {
+  // Step 1: Submit shipping info and create payment intent
+  const handleShippingSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!isAuthenticated) {
-      router.push(`/auth/login?next=${encodeURIComponent("/checkout")}`);
-      return;
-    }
+    setError(null);
     setLoading(true);
 
     try {
-      if (saveBillingInfo && isAuthenticated) {
-        const billingInfoToSave = {
-          cardholderName: billingData.cardholderName,
-          billingAddress: {
-            street: billingData.billingStreet,
-            city: billingData.billingCity,
-            state: billingData.billingState,
-            zipCode: billingData.billingZipCode,
-            country: billingData.billingCountry,
-          },
-        };
+      // Get token from context or localStorage
+      const authToken =
+        token ||
+        (typeof window !== "undefined" ? localStorage.getItem("token") : null);
 
-        await fetch("/api/profile/billing", {
+      if (!authToken) {
+        throw new Error("Authentication required. Please log in again.");
+      }
+
+      // Create payment intent
+      const paymentResponse = await fetch(
+        "/api/payments/create-payment-intent",
+        {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
+            Authorization: `Bearer ${authToken}`,
           },
-          body: JSON.stringify({ billingInfo: billingInfoToSave }),
-        });
+          body: JSON.stringify({
+            totalPrice: totalPrice * 1.08, // Include tax
+            customerEmail: formData.email,
+            customerName: formData.name,
+          }),
+        }
+      );
+
+      if (!paymentResponse.ok) {
+        const errorData = await paymentResponse.json().catch(() => ({}));
+        throw new Error(errorData.error || "Failed to initialize payment");
+      }
+
+      const { clientSecret: secret, paymentIntentId: intentId } =
+        await paymentResponse.json();
+
+      setClientSecret(secret);
+      setPaymentIntentId(intentId);
+      setPaymentStage("payment");
+    } catch (err) {
+      const errorMsg =
+        err instanceof Error ? err.message : "Failed to process shipping info";
+      setError(errorMsg);
+      console.error(errorMsg);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Step 2: After successful payment, create order
+  const handlePaymentSuccess = async (stripePaymentIntentId: string) => {
+    try {
+      setLoading(true);
+      setError(null);
+
+      // Get token from context or localStorage
+      const authToken =
+        token ||
+        (typeof window !== "undefined" ? localStorage.getItem("token") : null);
+
+      if (!authToken) {
+        throw new Error("Authentication required. Please log in again.");
       }
 
       const orderData: Omit<Order, "_id" | "createdAt" | "updatedAt"> = {
@@ -165,30 +167,46 @@ export default function CheckoutPage() {
           imageURL: item.imageURL,
         })),
         totalPrice: totalPrice * 1.08, // Including tax
-        status: "pending",
+        status: "processing",
+        paymentIntentId: stripePaymentIntentId,
+        paymentStatus: "succeeded",
       };
 
       const response = await fetch("/api/orders", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
+          Authorization: `Bearer ${authToken}`,
         },
         body: JSON.stringify(orderData),
       });
 
-      if (response.ok) {
-        const order = await response.json();
-        clearCart();
-        router.push(`/order-confirmation/${order._id}`);
-      } else {
-        throw new Error("Failed to place order");
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.error || "Failed to create order");
       }
-    } catch (error) {
-      console.error("Error placing order:", error);
-      alert("Failed to place order. Please try again.");
+
+      const order = await response.json();
+      clearCart();
+      router.push(`/order-confirmation/${order._id}`);
+    } catch (err) {
+      const errorMsg =
+        err instanceof Error ? err.message : "Failed to create order";
+      setError(errorMsg);
+      console.error(errorMsg);
     } finally {
       setLoading(false);
     }
+  };
+
+  const handlePaymentError = (errorMsg: string) => {
+    setError(errorMsg);
+  };
+
+  const handleBackToShipping = () => {
+    setPaymentStage("shipping");
+    setClientSecret(null);
+    setError(null);
   };
 
   if (!isAuthenticated || authLoading) {
@@ -224,325 +242,225 @@ export default function CheckoutPage() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <h1 className="text-3xl font-bold text-primary mb-8">Checkout</h1>
 
-        <form onSubmit={handleSubmit}>
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-            {/* Left Column - Forms */}
-            <div className="space-y-6">
-              {/* Shipping Information */}
-              <Card>
-                <CardHeader>
-                  <CardTitle>Shipping Information</CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                      <Label htmlFor="name">Full Name *</Label>
-                      <Input
-                        id="name"
-                        name="name"
-                        value={formData.name}
-                        onChange={handleInputChange}
-                        required
-                      />
-                    </div>
-                    <div>
-                      <Label htmlFor="email">Email *</Label>
-                      <Input
-                        id="email"
-                        name="email"
-                        type="email"
-                        value={formData.email}
-                        onChange={handleInputChange}
-                        required
-                      />
-                    </div>
-                  </div>
+        {error && (
+          <Alert variant="destructive" className="mb-6">
+            <AlertDescription>{error}</AlertDescription>
+          </Alert>
+        )}
 
-                  <div>
-                    <Label htmlFor="phone">Phone Number *</Label>
-                    <Input
-                      id="phone"
-                      name="phone"
-                      type="tel"
-                      value={formData.phone}
-                      onChange={handleInputChange}
-                      required
-                    />
-                  </div>
-
-                  <div>
-                    <Label htmlFor="street">Street Address *</Label>
-                    <Input
-                      id="street"
-                      name="street"
-                      value={formData.street}
-                      onChange={handleInputChange}
-                      required
-                    />
-                  </div>
-
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    <div>
-                      <Label htmlFor="city">City *</Label>
-                      <Input
-                        id="city"
-                        name="city"
-                        value={formData.city}
-                        onChange={handleInputChange}
-                        required
-                      />
-                    </div>
-                    <div>
-                      <Label htmlFor="state">State *</Label>
-                      <Input
-                        id="state"
-                        name="state"
-                        value={formData.state}
-                        onChange={handleInputChange}
-                        required
-                      />
-                    </div>
-                    <div>
-                      <Label htmlFor="zipCode">ZIP Code *</Label>
-                      <Input
-                        id="zipCode"
-                        name="zipCode"
-                        value={formData.zipCode}
-                        onChange={handleInputChange}
-                        required
-                      />
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-
-              <Card>
-                <CardHeader>
-                  <CardTitle>Card & Billing Information</CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                      <Label htmlFor="cardNumber">Card Number *</Label>
-                      <Input
-                        id="cardNumber"
-                        name="cardNumber"
-                        placeholder="1234 5678 9012 3456"
-                        value={billingData.cardNumber}
-                        onChange={(e) => {
-                          let value = e.target.value.replace(/\D/g, "");
-                          value = value.replace(/(.{4})/g, "$1 ").trim();
-                          handleBillingChange({
-                            target: { name: "cardNumber", value },
-                          } as React.ChangeEvent<HTMLInputElement>);
-                        }}
-                        maxLength={19}
-                        required
-                      />
-                    </div>
-                    <div>
-                      <Label htmlFor="cardholderName">Cardholder Name *</Label>
-                      <Input
-                        id="cardholderName"
-                        name="cardholderName"
-                        value={billingData.cardholderName}
-                        onChange={handleBillingChange}
-                        required
-                      />
-                    </div>
-                  </div>
-
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                      <Label htmlFor="expiryDate">Expiry Date *</Label>
-                      <Input
-                        id="expiryDate"
-                        name="expiryDate"
-                        placeholder="MM/YY"
-                        value={billingData.expiryDate}
-                        onChange={(e) => {
-                          let value = e.target.value.replace(/\D/g, "");
-                          if (value.length > 2) {
-                            value = value.slice(0, 2) + "/" + value.slice(2);
-                          }
-                          handleBillingChange({
-                            target: { name: "expiryDate", value },
-                          } as React.ChangeEvent<HTMLInputElement>);
-                        }}
-                        maxLength={5}
-                        required
-                      />
-                    </div>
-                    <div>
-                      <Label htmlFor="cvv">CVV *</Label>
-                      <Input
-                        id="cvv"
-                        name="cvv"
-                        placeholder="123"
-                        value={billingData.cvv}
-                        onChange={(e) => {
-                          let value = e.target.value.replace(/\D/g, "");
-                          if (value.length > 3) {
-                            value = value.slice(0, 3);
-                          }
-                          handleBillingChange({
-                            target: { name: "cvv", value },
-                          } as React.ChangeEvent<HTMLInputElement>);
-                        }}
-                        maxLength={3}
-                        required
-                      />
-                    </div>
-                  </div>
-
-                  <Separator />
-
-                  <div>
-                    <Label className="text-base font-medium">
-                      Billing Address
-                    </Label>
-                  </div>
-
-                  <div>
-                    <Label htmlFor="billingStreet">Street Address *</Label>
-                    <Input
-                      id="billingStreet"
-                      name="billingStreet"
-                      value={billingData.billingStreet}
-                      onChange={handleBillingChange}
-                      required
-                    />
-                  </div>
-
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    <div>
-                      <Label htmlFor="billingCity">City *</Label>
-                      <Input
-                        id="billingCity"
-                        name="billingCity"
-                        value={billingData.billingCity}
-                        onChange={handleBillingChange}
-                        required
-                      />
-                    </div>
-                    <div>
-                      <Label htmlFor="billingState">State *</Label>
-                      <Input
-                        id="billingState"
-                        name="billingState"
-                        value={billingData.billingState}
-                        onChange={handleBillingChange}
-                        required
-                      />
-                    </div>
-                    <div>
-                      <Label htmlFor="billingZipCode">ZIP Code *</Label>
-                      <Input
-                        id="billingZipCode"
-                        name="billingZipCode"
-                        value={billingData.billingZipCode}
-                        onChange={handleBillingChange}
-                        required
-                      />
-                    </div>
-                  </div>
-
-                  {isAuthenticated && (
-                    <div className="flex items-center space-x-2 pt-4">
-                      <Checkbox
-                        id="saveBillingInfo"
-                        checked={saveBillingInfo}
-                        onCheckedChange={(checked) =>
-                          setSaveBillingInfo(checked as boolean)
-                        }
-                      />
-                      <Label htmlFor="saveBillingInfo" className="text-sm">
-                        Save this info for later purchases
-                      </Label>
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
-            </div>
-
-            {/* Order Summary */}
-            <div>
-              <Card className="sticky top-24">
-                <CardHeader>
-                  <CardTitle>Order Summary</CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  {/* Order Items */}
-                  <div className="space-y-3 max-h-64 overflow-y-auto">
-                    {items.map((item) => (
-                      <div key={item.productId} className="flex gap-3">
-                        <div className="relative w-16 h-16 flex-shrink-0">
-                          <Image
-                            src={item.imageURL || "/placeholder.svg"}
-                            alt={item.name}
-                            fill
-                            className="object-cover rounded-md"
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+          {/* Left Column - Forms */}
+          <div className="space-y-6">
+            {paymentStage === "shipping" ? (
+              <>
+                {/* Shipping Information */}
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Shipping Information</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <form onSubmit={handleShippingSubmit} className="space-y-4">
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                          <Label htmlFor="name">Full Name *</Label>
+                          <Input
+                            id="name"
+                            name="name"
+                            value={formData.name}
+                            onChange={handleInputChange}
+                            required
                           />
                         </div>
-                        <div className="flex-1 min-w-0">
-                          <h4 className="font-medium text-sm line-clamp-2">
-                            {item.name}
-                          </h4>
-                          <p className="text-muted-foreground text-sm">
-                            Qty: {item.quantity} × {formatPrice(item.price)}
-                          </p>
-                        </div>
-                        <div className="text-right">
-                          <p className="font-medium">
-                            {formatPrice(item.price * item.quantity)}
-                          </p>
+                        <div>
+                          <Label htmlFor="email">Email *</Label>
+                          <Input
+                            id="email"
+                            name="email"
+                            type="email"
+                            value={formData.email}
+                            onChange={handleInputChange}
+                            required
+                          />
                         </div>
                       </div>
-                    ))}
-                  </div>
 
-                  <Separator />
+                      <div>
+                        <Label htmlFor="phone">Phone Number *</Label>
+                        <Input
+                          id="phone"
+                          name="phone"
+                          type="tel"
+                          value={formData.phone}
+                          onChange={handleInputChange}
+                          required
+                        />
+                      </div>
 
-                  <div className="space-y-2">
-                    <div className="flex justify-between">
-                      <span className="text-muted-foreground">Subtotal</span>
-                      <span>{formatPrice(totalPrice)}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-muted-foreground">Shipping</span>
-                      <span className="text-green-600">Free</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-muted-foreground">Tax</span>
-                      <span>{formatPrice(totalPrice * 0.08)}</span>
-                    </div>
-                    <Separator />
-                    <div className="flex justify-between text-lg font-bold">
-                      <span>Total</span>
-                      <span className="text-primary">
-                        {formatPrice(totalPrice * 1.08)}
-                      </span>
-                    </div>
-                  </div>
+                      <div>
+                        <Label htmlFor="street">Street Address *</Label>
+                        <Input
+                          id="street"
+                          name="street"
+                          value={formData.street}
+                          onChange={handleInputChange}
+                          required
+                        />
+                      </div>
 
-                  <Button
-                    type="submit"
-                    size="lg"
-                    className="w-full"
-                    disabled={loading}
-                  >
-                    {loading ? "Placing Order..." : "Place Order"}
-                  </Button>
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <div>
+                          <Label htmlFor="city">City *</Label>
+                          <Input
+                            id="city"
+                            name="city"
+                            value={formData.city}
+                            onChange={handleInputChange}
+                            required
+                          />
+                        </div>
+                        <div>
+                          <Label htmlFor="state">State *</Label>
+                          <Input
+                            id="state"
+                            name="state"
+                            value={formData.state}
+                            onChange={handleInputChange}
+                            required
+                          />
+                        </div>
+                        <div>
+                          <Label htmlFor="zipCode">ZIP Code *</Label>
+                          <Input
+                            id="zipCode"
+                            name="zipCode"
+                            value={formData.zipCode}
+                            onChange={handleInputChange}
+                            required
+                          />
+                        </div>
+                      </div>
 
-                  <p className="text-xs text-muted-foreground text-center">
-                    By placing your order, you agree to our terms and
-                    conditions.
-                  </p>
-                </CardContent>
-              </Card>
-            </div>
+                      <Button
+                        type="submit"
+                        size="lg"
+                        className="w-full"
+                        disabled={loading}
+                      >
+                        {loading ? "Processing..." : "Continue to Payment"}
+                      </Button>
+                    </form>
+                  </CardContent>
+                </Card>
+              </>
+            ) : (
+              <>
+                {/* Payment Information */}
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Payment Information</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    {clientSecret && (
+                      <PaymentFormWrapper
+                        clientSecret={clientSecret}
+                        customerEmail={formData.email}
+                        onSuccess={handlePaymentSuccess}
+                        onError={handlePaymentError}
+                        isLoading={loading}
+                      />
+                    )}
+                  </CardContent>
+                </Card>
+
+                {/* Back Button */}
+                <Button
+                  variant="outline"
+                  className="w-full"
+                  onClick={handleBackToShipping}
+                  disabled={loading}
+                >
+                  ← Back to Shipping
+                </Button>
+              </>
+            )}
           </div>
-        </form>
+
+          {/* Order Summary */}
+          <div>
+            <Card className="sticky top-24">
+              <CardHeader>
+                <CardTitle>Order Summary</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                {/* Order Items */}
+                <div className="space-y-3 max-h-64 overflow-y-auto">
+                  {items.map((item) => (
+                    <div key={item.productId} className="flex gap-3">
+                      <div className="relative w-16 h-16 flex-shrink-0">
+                        <Image
+                          src={item.imageURL || "/placeholder.svg"}
+                          alt={item.name}
+                          fill
+                          className="object-cover rounded-md"
+                        />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <h4 className="font-medium text-sm line-clamp-2">
+                          {item.name}
+                        </h4>
+                        <p className="text-muted-foreground text-sm">
+                          Qty: {item.quantity} × {formatPrice(item.price)}
+                        </p>
+                      </div>
+                      <div className="text-right">
+                        <p className="font-medium">
+                          {formatPrice(item.price * item.quantity)}
+                        </p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+
+                <Separator />
+
+                <div className="space-y-2">
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">Subtotal</span>
+                    <span>{formatPrice(totalPrice)}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">Shipping</span>
+                    <span className="text-green-600">Free</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">Tax</span>
+                    <span>{formatPrice(totalPrice * 0.08)}</span>
+                  </div>
+                  <Separator />
+                  <div className="flex justify-between text-lg font-bold">
+                    <span>Total</span>
+                    <span className="text-primary">
+                      {formatPrice(totalPrice * 1.08)}
+                    </span>
+                  </div>
+                </div>
+
+                {paymentStage === "shipping" && (
+                  <p className="text-xs text-muted-foreground text-center">
+                    You will be able to enter payment details after confirming
+                    your shipping information.
+                  </p>
+                )}
+
+                {paymentStage === "payment" && (
+                  <p className="text-xs text-muted-foreground text-center">
+                    Your payment information is secure and processed by Stripe.
+                  </p>
+                )}
+              </CardContent>
+            </Card>
+          </div>
+        </div>
       </div>
 
       <Footer />
