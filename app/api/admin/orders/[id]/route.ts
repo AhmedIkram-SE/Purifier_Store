@@ -56,6 +56,37 @@ export async function PUT(
       return NextResponse.json({ error: "Order not found" }, { status: 404 });
     }
 
+    // If status is "shipped", send shipped notification email
+    if (status === "shipped") {
+      const order = await db.collection("orders").findOne({
+        _id: new ObjectId(params.id),
+      });
+
+      if (order) {
+        // Send shipped notification email asynchronously
+        fetch(
+          `${
+            process.env.NODE_ENV === "development"
+              ? "http://localhost:3000"
+              : process.env.NEXT_PUBLIC_BASE_URL || "https://purifierstore.com"
+          }/api/emails`,
+          {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              type: "shipped_notification",
+              order: {
+                ...order,
+                _id: params.id,
+              },
+            }),
+          }
+        ).catch((err) =>
+          console.error("Failed to send shipped notification email:", err)
+        );
+      }
+    }
+
     return NextResponse.json({ message: "Order status updated successfully" });
   } catch (error) {
     console.error("Error updating order status:", error);
