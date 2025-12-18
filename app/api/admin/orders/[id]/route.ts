@@ -68,7 +68,7 @@ export async function PUT(
           `${
             process.env.NODE_ENV === "development"
               ? "http://localhost:3000"
-              : process.env.NEXT_PUBLIC_BASE_URL || "https://purifierstore.com"
+              : process.env.NEXT_PUBLIC_BASE_URL || "https://purelife.dev"
           }/api/emails`,
           {
             method: "POST",
