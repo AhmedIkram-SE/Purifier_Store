@@ -17,6 +17,7 @@ import {
 } from "@/components/ui/select";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
+import ImageUpload from "@/components/image-upload";
 import type { Product } from "@/models/Product";
 import { X, Plus, Sparkles, Loader } from "lucide-react";
 import { useAIEnhance } from "@/hooks/use-ai-enhance";
@@ -341,14 +342,22 @@ export default function ProductForm({
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="imageURL">Image URL</Label>
-            <Input
-              id="imageURL"
-              type="string"
-              value={formData.imageURL}
-              onChange={(e) => handleInputChange("imageURL", e.target.value)}
-              placeholder="https://example.com/image.jpg"
+            <Label>Product Image</Label>
+            <ImageUpload
+              folder={
+                formData.category === "water-purifier"
+                  ? "water-purifiers"
+                  : "air-purifiers"
+              }
+              onImageUrlChange={(url) => handleInputChange("imageURL", url)}
+              currentImageUrl={formData.imageURL}
+              label="Upload or Replace Image"
             />
+            {formData.imageURL && (
+              <p className="text-xs text-muted-foreground">
+                Current image: {formData.imageURL.substring(0, 50)}...
+              </p>
+            )}
           </div>
 
           <div className="space-y-2">
